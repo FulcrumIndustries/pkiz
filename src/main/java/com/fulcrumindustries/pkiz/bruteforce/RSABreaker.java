@@ -116,7 +116,7 @@ public class RSABreaker {
 //        }
         String publicKey = "D:/TEST/smallkey.key";
         String inputFile = "C:/Users/phili/OneDrive/Documents/GitHub/pkiz/smalltest.txt.enc";
-        String solved = PollardForce(inputFile, publicKey, inputFile+".out");
+        String solved = PollardForce(inputFile, publicKey, inputFile + ".out");
         System.out.print("Solution : " + solved);
     }
 
@@ -191,7 +191,29 @@ public class RSABreaker {
 
     }
 
-    public static String PollardForce(String publicKey, String inputFile, String outputFile)  {
+    public static BigInteger estimatePollard(String publicKey) {
+        BigInteger eval = BigInteger.ONE;
+        try {
+            CryptoGenerator cg = new CryptoGenerator();
+            java.security.PublicKey pub = cg.getPublicKeyV2(publicKey);
+            RSAPublicKey rsaPub = (RSAPublicKey) (pub);
+            System.out.println("KEYSIZE:" + rsaPub.getModulus().bitLength());
+            BigInteger bigE = BigInteger.TWO;
+            BigInteger computationRequired = bigE.pow(rsaPub.getModulus().bitLength());
+            Runtime rtr = Runtime.getRuntime();
+            int procs = rtr.availableProcessors();
+            BigInteger cpuStrength = BigInteger.valueOf(procs * 3 * 1000 * 1000 * 1000);
+            System.out.println("CPU STR:" + cpuStrength);
+            eval = computationRequired.divide(cpuStrength).divide(BigInteger.valueOf(3600));
+            System.out.println("EVAL:" + eval);
+        } catch (EnigmaException ex) {
+            Exceptions.printStackTrace(ex);
+            //System.out.print("Crashed : " + dd.getMessage() + " " + dd.toString());
+        }
+        return eval;
+    }
+
+    public static String PollardForce(String publicKey, String inputFile, String outputFile) {
         //String publicKey = "D:/TEST/key.key";
         //String inputFile = "C:/Users/phili/OneDrive/Documents/GitHub/pkiz/test.txt.enc";
         String solution = "";

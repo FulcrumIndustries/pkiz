@@ -6,61 +6,44 @@
 package org.caulfield.pkiz.crypto.x509;
 
 import java.io.FileOutputStream;
-
+import java.io.IOException;
 import java.math.BigInteger;
-
 import java.security.KeyFactory;
-
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-
 import java.security.PublicKey;
-
+import java.security.SecureRandom;
 import java.security.Security;
-
 import java.security.cert.Certificate;
-
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-
 import java.security.spec.RSAPrivateCrtKeySpec;
-
 import java.security.spec.RSAPublicKeySpec;
-
 import java.util.Date;
-
+import java.util.Random;
 import org.bouncycastle.asn1.DERBMPString;
-
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-
 import org.bouncycastle.asn1.x500.X500Name;
-
 import org.bouncycastle.asn1.x500.X500NameBuilder;
-
 import org.bouncycastle.asn1.x500.style.BCStyle;
-
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
-
 import org.bouncycastle.asn1.x509.Extension;
-
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
-
 import org.bouncycastle.cert.X509v1CertificateBuilder;
-
 import org.bouncycastle.cert.X509v3CertificateBuilder;
-
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
-
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 /**
@@ -84,6 +67,69 @@ public class CertificateChainBuilder {
      *
      */
     static char[] passwd = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+
+    private static KeyPair generateKeyPair() throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+        kpGen.initialize(2048, new SecureRandom());
+        return kpGen.generateKeyPair();
+    }
+
+    private static void saveToFile(X509Certificate certificate, String filePath) throws IOException, CertificateEncodingException {
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        fileOutputStream.write(certificate.getEncoded());
+        fileOutputStream.flush();
+        fileOutputStream.close();
+    }
+
+    public static Certificate createCACert(Date expiryDate, String CN, String Org, String OU, String alias, boolean export, boolean genPK, String savePath) {
+        try {
+            System.out.print("WWW");
+            // Create self signed Root CA certificate  
+            KeyPair rootCAKeyPair = null;
+            if (genPK) {
+                rootCAKeyPair = generateKeyPair();
+            } else {
+                // Import a key from DB
+            }
+            X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
+            name.addRDN(BCStyle.CN, CN);
+            name.addRDN(BCStyle.O, Org);
+            name.addRDN(BCStyle.OU, OU);
+            X500Name subject = name.build();
+            X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                    subject, // issuer authority  
+                    BigInteger.valueOf(new Random().nextInt()), //serial number of certificate  
+                    new Date(), // start of validity  
+                    expiryDate, //end of certificate validity  
+                    subject, // subject name of certificate  
+                    rootCAKeyPair.getPublic()); // public key of certificate  
+            // key usage restrictions  
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign));
+            builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(true));
+            JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(rootCAKeyPair.getPublic());
+            builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
+            AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(rootCAKeyPair.getPublic());
+            builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
+            X509Certificate rootCA = new JcaX509CertificateConverter().getCertificate(builder
+                    .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
+                            build(rootCAKeyPair.getPrivate()))); // private key of signing authority , here it is self signed  
+            if (export) {
+                System.out.print(savePath + alias + ".crt");
+                saveToFile(rootCA, savePath + alias + ".crt");
+            }
+            // Save everything to DB
+            // PK 
+            // PUb KEY
+            // CERT
+            //int certID = CryptoDAO.insertCertInDB(certStream, alias, CN, hc.getStringChecksum(certStream2, HashCalculator.SHA256), algo, (int) (long) privKeyID, thumbPrint, idParentCert, 2, cert.getNotAfter(), affectedSerial, BigInteger.ONE, CRLstartDate);
+            return rootCA;
+        } catch (Exception r) {
+            System.out.print(r.toString());
+            System.out.print(r.getMessage());
+        }
+        return null;
+    }
 
     /**
      *

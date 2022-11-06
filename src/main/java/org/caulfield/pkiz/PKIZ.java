@@ -22,10 +22,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.Security;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -57,11 +59,13 @@ import javax.swing.tree.AbstractLayoutCache;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.caulfield.pkiz.analyzer.FileAnalyzer;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
 import org.caulfield.pkiz.crypto.EnigmaException;
 import org.caulfield.pkiz.crypto.x509.CRLManager;
+import org.caulfield.pkiz.crypto.x509.CertificateChainBuilder;
 import org.caulfield.pkiz.crypto.x509.CertificateChainManager;
 import org.caulfield.pkiz.database.definition.CryptoDAO;
 import org.caulfield.pkiz.database.definition.EnigmaCRL;
@@ -103,6 +107,9 @@ public class PKIZ extends javax.swing.JFrame {
             }
         });
         initComponents();
+        Security.addProvider(new BouncyCastleProvider());
+        jTextFieldCountry.setDocument(new JTextFieldLimit(2));
+        jLabelLoading.setVisible(false);
         this.setTitle("PKIZ - 1.00a");
         try ( InputStream resourceStream = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(propFile)) {
@@ -212,6 +219,7 @@ public class PKIZ extends javax.swing.JFrame {
             while (f.next()) {
                 jComboBoxSignSignerCert.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
                 jComboBoxCipherCert.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
+                jComboBoxWParents.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
             }
         } catch (SQLException ex) {
             Logger.getLogger(PKIZ.class.getName()).log(Level.SEVERE, null, ex);
@@ -648,16 +656,12 @@ public class PKIZ extends javax.swing.JFrame {
             HSQLLoader database = new HSQLLoader();
             ResultSet f = database.runQuery("select ID_KEY,KEYNAME,ALGO from X509KEYS WHERE KEYTYPE=1");
             while (f.next()) {
-                jComboBoxPubPK
-                        .addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxCSRPk
-                        .addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxSignPK
-                        .addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxCertPk
-                        .addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxCipherCert
-                        .addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxPubPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxCSRPk.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxSignPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxCertPk.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxCipherCert.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxWPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
             }
             buildPopupMenuX509Keys();
         } catch (SQLException ex) {
@@ -714,11 +718,40 @@ public class PKIZ extends javax.swing.JFrame {
         jScrollPane6 = new javax.swing.JScrollPane();
         jTextArea2 = new javax.swing.JTextArea();
         jButton4 = new javax.swing.JButton();
-        jFrameX509vsPGP = new javax.swing.JFrame();
-        jPanelX509vsPGP = new javax.swing.JPanel();
-        jScrollPane7 = new javax.swing.JScrollPane();
-        jTextArea3 = new javax.swing.JTextArea();
-        jButton5 = new javax.swing.JButton();
+        jFrameCertWizard = new javax.swing.JFrame();
+        jPanelCertWizard = new javax.swing.JPanel();
+        jComboBoxWParents = new javax.swing.JComboBox<>();
+        jComboBoxWType = new javax.swing.JComboBox<>();
+        jTextFieldWAlias = new javax.swing.JTextField();
+        jComboBoxWPK = new javax.swing.JComboBox<>();
+        jCheckBoxWGenPk = new javax.swing.JCheckBox();
+        jTextFieldWCN = new javax.swing.JTextField();
+        jTextFieldWOrg = new javax.swing.JTextField();
+        jTextFieldWOU = new javax.swing.JTextField();
+        jTextFieldCountry = new javax.swing.JTextField();
+        jDateChooserWExpiry = new com.toedter.calendar.JDateChooser();
+        jCheckBoxWexport = new javax.swing.JCheckBox();
+        jButtonWCertGenerate = new javax.swing.JButton();
+        jLabel25 = new javax.swing.JLabel();
+        jLabel29 = new javax.swing.JLabel();
+        jLabel38 = new javax.swing.JLabel();
+        jLabel35 = new javax.swing.JLabel();
+        jLabel39 = new javax.swing.JLabel();
+        jLabel57 = new javax.swing.JLabel();
+        jLabel76 = new javax.swing.JLabel();
+        jLabel80 = new javax.swing.JLabel();
+        jLabel81 = new javax.swing.JLabel();
+        jLabel82 = new javax.swing.JLabel();
+        jLabel83 = new javax.swing.JLabel();
+        jLabel84 = new javax.swing.JLabel();
+        jLabel85 = new javax.swing.JLabel();
+        jLabel86 = new javax.swing.JLabel();
+        jPasswordFieldW1 = new javax.swing.JPasswordField();
+        jPasswordFieldW2 = new javax.swing.JPasswordField();
+        jLabel87 = new javax.swing.JLabel();
+        jLabel88 = new javax.swing.JLabel();
+        jLabelWConsole = new javax.swing.JLabel();
+        jLabel89 = new javax.swing.JLabel();
         jDialogFileImport = new javax.swing.JDialog();
         jLabel62 = new javax.swing.JLabel();
         jTextFieldImportKeyName = new javax.swing.JTextField();
@@ -737,8 +770,6 @@ public class PKIZ extends javax.swing.JFrame {
         jFileChooserExportCRL = new javax.swing.JFileChooser();
         jPanelPGPKeyring = new javax.swing.JPanel();
         jLabel56 = new javax.swing.JLabel();
-        jButtonDashPGP = new javax.swing.JButton();
-        jButtonDashScenarios = new javax.swing.JButton();
         jTabbedPaneScreens = new javax.swing.JTabbedPane();
         jPanelDashboard = new javax.swing.JPanel();
         jPanel23 = new javax.swing.JPanel();
@@ -754,7 +785,6 @@ public class PKIZ extends javax.swing.JFrame {
         jPanel8 = new javax.swing.JPanel();
         jButtonDashX509 = new javax.swing.JButton();
         jButtonDashX510 = new javax.swing.JButton();
-        jButtonDashX511 = new javax.swing.JButton();
         jButtonDashX512 = new javax.swing.JButton();
         jPanel22 = new javax.swing.JPanel();
         jButtonDashX513 = new javax.swing.JButton();
@@ -968,9 +998,11 @@ public class PKIZ extends javax.swing.JFrame {
         jTextFieldBruteFile = new javax.swing.JTextField();
         jButtonBrowseBruteFile = new javax.swing.JButton();
         jButtonBruteForce = new javax.swing.JButton();
-        jLabel18 = new javax.swing.JLabel();
+        jButtonBruteForceCancel = new javax.swing.JButton();
         jScrollPane10 = new javax.swing.JScrollPane();
-        jEditorPaneIdentifierResults1 = new javax.swing.JEditorPane();
+        jEditorPaneIBruteForceResult = new javax.swing.JEditorPane();
+        jLabel18 = new javax.swing.JLabel();
+        jLabelLoading = new javax.swing.JLabel();
         jPanelEvents = new javax.swing.JPanel();
         jProgressBarEnigma = new javax.swing.JProgressBar();
         jScrollPaneForEvents = new javax.swing.JScrollPane();
@@ -1144,69 +1176,237 @@ public class PKIZ extends javax.swing.JFrame {
                 .addContainerGap(18, Short.MAX_VALUE))
         );
 
-        jFrameX509vsPGP.setMinimumSize(new java.awt.Dimension(780, 300));
+        jFrameCertWizard.setAlwaysOnTop(true);
+        jFrameCertWizard.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        jFrameCertWizard.setLocation(new java.awt.Point(200, 200));
+        jFrameCertWizard.setMaximumSize(new java.awt.Dimension(550, 470));
+        jFrameCertWizard.setMinimumSize(new java.awt.Dimension(550, 470));
+        jFrameCertWizard.setPreferredSize(new java.awt.Dimension(550, 470));
+        jFrameCertWizard.getContentPane().setLayout(new javax.swing.BoxLayout(jFrameCertWizard.getContentPane(), javax.swing.BoxLayout.LINE_AXIS));
 
-        jPanelX509vsPGP.setBorder(javax.swing.BorderFactory.createTitledBorder("X509 vs PGP"));
+        jPanelCertWizard.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Fastest Wizard"));
 
-        jTextArea3.setBackground(javax.swing.UIManager.getDefaults().getColor("Button.background"));
-        jTextArea3.setColumns(20);
-        jTextArea3.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
-        jTextArea3.setRows(5);
-        jTextArea3.setText("Advantages of X.509 Signatures\n\nIt is much easier to verify that the key that signed the file is really ours (not attacker’s).\nYou do not have to download or install any extra software to verify an X.509 signature (see below).\nYou do not have to download and import our public key (it is embedded in the signed file).\nYou do not have to download any separate signature file (the signature is embedded in the signed file).\n\nAdvantages of PGP Signatures\n\nThey do not depend on any certificate authority (which might be e.g. infiltrated or controlled by an adversary, or be untrustworthy for other reasons).");
-        jScrollPane7.setViewportView(jTextArea3);
+        jComboBoxWParents.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "None" }));
 
-        javax.swing.GroupLayout jPanelX509vsPGPLayout = new javax.swing.GroupLayout(jPanelX509vsPGP);
-        jPanelX509vsPGP.setLayout(jPanelX509vsPGPLayout);
-        jPanelX509vsPGPLayout.setHorizontalGroup(
-            jPanelX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 768, Short.MAX_VALUE)
-            .addGroup(jPanelX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanelX509vsPGPLayout.createSequentialGroup()
-                    .addGap(4, 4, 4)
-                    .addComponent(jScrollPane7)
-                    .addGap(4, 4, 4)))
-        );
-        jPanelX509vsPGPLayout.setVerticalGroup(
-            jPanelX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 180, Short.MAX_VALUE)
-            .addGroup(jPanelX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jPanelX509vsPGPLayout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jScrollPane7, javax.swing.GroupLayout.PREFERRED_SIZE, 158, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-        );
-
-        jButton5.setBackground(new java.awt.Color(204, 255, 204));
-        jButton5.setFont(new java.awt.Font("Gulim", 1, 14)); // NOI18N
-        jButton5.setText("I see !");
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
+        jComboBoxWType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Server Certificate", "Client Certificate", "CA Certificate" }));
+        jComboBoxWType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
+                jComboBoxWTypeActionPerformed(evt);
             }
         });
 
-        javax.swing.GroupLayout jFrameX509vsPGPLayout = new javax.swing.GroupLayout(jFrameX509vsPGP.getContentPane());
-        jFrameX509vsPGP.getContentPane().setLayout(jFrameX509vsPGPLayout);
-        jFrameX509vsPGPLayout.setHorizontalGroup(
-            jFrameX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jFrameX509vsPGPLayout.createSequentialGroup()
-                .addGap(267, 267, 267)
-                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(272, Short.MAX_VALUE))
-            .addGroup(jFrameX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(jPanelX509vsPGP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        jTextFieldWAlias.setText("MyCertificateName");
+
+        jComboBoxWPK.setEnabled(false);
+
+        jCheckBoxWGenPk.setSelected(true);
+        jCheckBoxWGenPk.setText("Generate One");
+        jCheckBoxWGenPk.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxWGenPkActionPerformed(evt);
+            }
+        });
+
+        jTextFieldWOrg.setText("Company");
+
+        jTextFieldWOU.setText("IT");
+
+        jTextFieldCountry.setText("US");
+
+        jDateChooserWExpiry.setName("JDateChooserExpiry"); // NOI18N
+
+        jCheckBoxWexport.setSelected(true);
+        jCheckBoxWexport.setText("Export the certificate on disk");
+        jCheckBoxWexport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxWexportActionPerformed(evt);
+            }
+        });
+
+        jButtonWCertGenerate.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
+        jButtonWCertGenerate.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonWCertGenerate.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonWCertGenerate.setText("Create Certificate");
+        jButtonWCertGenerate.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonWCertGenerate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonWCertGenerateActionPerformed(evt);
+            }
+        });
+
+        jLabel25.setText("Common Name : ");
+
+        jLabel29.setText("Type : ");
+
+        jLabel38.setText("Certificate Alias : ");
+
+        jLabel35.setText("Private Key : ");
+
+        jLabel39.setText("Organization : ");
+
+        jLabel57.setText("(optional)");
+
+        jLabel76.setText("(optional)");
+
+        jLabel80.setText("Organizational Unit : ");
+
+        jLabel81.setText("Country : ");
+
+        jLabel82.setText("(optional)");
+
+        jLabel83.setText("Expiration Date : ");
+
+        jLabel84.setText("Parent Certificate :");
+
+        jLabel85.setText("(optional)");
+
+        jLabel86.setText("Password : ");
+
+        jPasswordFieldW1.setText("jPasswordField1");
+
+        jPasswordFieldW2.setText("jPasswordField1");
+        jPasswordFieldW2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jPasswordFieldW2ActionPerformed(evt);
+            }
+        });
+
+        jLabel87.setText("Repeat : ");
+
+        jLabel88.setFont(new java.awt.Font("Segoe UI", 2, 12)); // NOI18N
+        jLabel88.setText("its name in PKIZ");
+
+        jLabelWConsole.setForeground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
+        jLabelWConsole.setText("Ready to Generate");
+        jLabelWConsole.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+
+        jLabel89.setText("Export file : ");
+
+        javax.swing.GroupLayout jPanelCertWizardLayout = new javax.swing.GroupLayout(jPanelCertWizard);
+        jPanelCertWizard.setLayout(jPanelCertWizardLayout);
+        jPanelCertWizardLayout.setHorizontalGroup(
+            jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelCertWizardLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jButtonWCertGenerate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelCertWizardLayout.createSequentialGroup()
+                        .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel29)
+                                    .addComponent(jLabel35)
+                                    .addComponent(jLabel38)
+                                    .addComponent(jLabel39)
+                                    .addComponent(jLabel80)
+                                    .addComponent(jLabel81)
+                                    .addComponent(jLabel84)
+                                    .addComponent(jLabel83))
+                                .addComponent(jLabel25)
+                                .addComponent(jLabel86))
+                            .addComponent(jLabel89))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBoxWexport)
+                            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jComboBoxWParents, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldCountry)
+                                    .addComponent(jTextFieldWOU)
+                                    .addComponent(jTextFieldWOrg)
+                                    .addComponent(jTextFieldWAlias)
+                                    .addComponent(jComboBoxWType, 0, 200, Short.MAX_VALUE)
+                                    .addComponent(jComboBoxWPK, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldWCN))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel82)
+                                    .addComponent(jCheckBoxWGenPk)
+                                    .addComponent(jLabel57)
+                                    .addComponent(jLabel76)
+                                    .addComponent(jLabel85)
+                                    .addComponent(jLabel88)))
+                            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                                .addComponent(jPasswordFieldW1, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel87)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jPasswordFieldW2, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addGap(14, 14, 14))
+            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                .addGap(23, 23, 23)
+                .addComponent(jLabelWConsole, javax.swing.GroupLayout.PREFERRED_SIZE, 420, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-        jFrameX509vsPGPLayout.setVerticalGroup(
-            jFrameX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jFrameX509vsPGPLayout.createSequentialGroup()
-                .addContainerGap(224, Short.MAX_VALUE)
-                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(28, 28, 28))
-            .addGroup(jFrameX509vsPGPLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(jFrameX509vsPGPLayout.createSequentialGroup()
-                    .addComponent(jPanelX509vsPGP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 98, Short.MAX_VALUE)))
+        jPanelCertWizardLayout.setVerticalGroup(
+            jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel84)
+                    .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jComboBoxWParents, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel85)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel29)
+                    .addComponent(jComboBoxWType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldWAlias, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel38)
+                    .addComponent(jLabel88))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jComboBoxWPK, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel35)
+                    .addComponent(jCheckBoxWGenPk))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel86)
+                    .addComponent(jPasswordFieldW1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jPasswordFieldW2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel87))
+                .addGap(7, 7, 7)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldWCN, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel25))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldWOrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel39)
+                    .addComponent(jLabel57))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldWOU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel80)
+                    .addComponent(jLabel76))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldCountry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel81)
+                    .addComponent(jLabel82))
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                        .addGap(12, 12, 12)
+                        .addComponent(jLabel83))
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jCheckBoxWexport, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel89, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jButtonWCertGenerate, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabelWConsole, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+
+        jFrameCertWizard.getContentPane().add(jPanelCertWizard);
 
         jDialogFileImport.setTitle("Import Key");
         jDialogFileImport.setAlwaysOnTop(true);
@@ -1370,30 +1570,6 @@ public class PKIZ extends javax.swing.JFrame {
                 .addContainerGap(353, Short.MAX_VALUE))
         );
 
-        jButtonDashPGP.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
-        jButtonDashPGP.setIcon(new javax.swing.ImageIcon(getClass().getResource("/pgp.png"))); // NOI18N
-        jButtonDashPGP.setText("Trousseau PGP");
-        jButtonDashPGP.setHorizontalAlignment(javax.swing.SwingConstants.LEADING);
-        jButtonDashPGP.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
-        jButtonDashPGP.setIconTextGap(10);
-        jButtonDashPGP.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonDashPGPActionPerformed(evt);
-            }
-        });
-
-        jButtonDashScenarios.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
-        jButtonDashScenarios.setIcon(new javax.swing.ImageIcon(getClass().getResource("/scenario.png"))); // NOI18N
-        jButtonDashScenarios.setText("Scenarios");
-        jButtonDashScenarios.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jButtonDashScenarios.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
-        jButtonDashScenarios.setIconTextGap(10);
-        jButtonDashScenarios.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonDashScenariosActionPerformed(evt);
-            }
-        });
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
         setSize(new java.awt.Dimension(1427, 846));
@@ -1551,7 +1727,7 @@ public class PKIZ extends javax.swing.JFrame {
         jButtonDashX509.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
         jButtonDashX509.setForeground(new java.awt.Color(102, 102, 102));
         jButtonDashX509.setIcon(new javax.swing.ImageIcon(getClass().getResource("/10439_gear_icon.png"))); // NOI18N
-        jButtonDashX509.setText("Generate a client certificate     ");
+        jButtonDashX509.setText("Create a certificate (Wizard) ");
         jButtonDashX509.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jButtonDashX509.setIconTextGap(5);
         jButtonDashX509.addActionListener(new java.awt.event.ActionListener() {
@@ -1563,27 +1739,13 @@ public class PKIZ extends javax.swing.JFrame {
         jButtonDashX510.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
         jButtonDashX510.setForeground(new java.awt.Color(102, 102, 102));
         jButtonDashX510.setIcon(new javax.swing.ImageIcon(getClass().getResource("/10438_gear_green_icon.png"))); // NOI18N
-        jButtonDashX510.setText("Generate a server certificate   ");
+        jButtonDashX510.setText("Create a certificate (Advanced)");
         jButtonDashX510.setActionCommand("Générer un certificat serveur  ");
         jButtonDashX510.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
         jButtonDashX510.setIconTextGap(5);
         jButtonDashX510.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonDashX510ActionPerformed(evt);
-            }
-        });
-
-        jButtonDashX511.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
-        jButtonDashX511.setForeground(new java.awt.Color(102, 102, 102));
-        jButtonDashX511.setIcon(new javax.swing.ImageIcon(getClass().getResource("/10437_blue_gear_icon.png"))); // NOI18N
-        jButtonDashX511.setText("Generate a specific certificate ");
-        jButtonDashX511.setToolTipText("");
-        jButtonDashX511.setActionCommand("J'ai besoin d'un certificat spécifique");
-        jButtonDashX511.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        jButtonDashX511.setIconTextGap(5);
-        jButtonDashX511.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonDashX511ActionPerformed(evt);
             }
         });
 
@@ -1608,7 +1770,6 @@ public class PKIZ extends javax.swing.JFrame {
                 .addGroup(jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jButtonDashX509, javax.swing.GroupLayout.PREFERRED_SIZE, 379, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButtonDashX510, javax.swing.GroupLayout.PREFERRED_SIZE, 379, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonDashX511, javax.swing.GroupLayout.PREFERRED_SIZE, 379, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButtonDashX512, javax.swing.GroupLayout.PREFERRED_SIZE, 379, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -1620,10 +1781,8 @@ public class PKIZ extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jButtonDashX510)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButtonDashX511)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jButtonDashX512)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
 
         jPanel22.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Analysis", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Malgun Gothic", 1, 14))); // NOI18N
@@ -1787,7 +1946,7 @@ public class PKIZ extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        jPanel26.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Convertion ", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Malgun Gothic", 1, 14))); // NOI18N
+        jPanel26.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Convert formats", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Malgun Gothic", 1, 14))); // NOI18N
         jPanel26.setToolTipText("");
 
         jButtonDashX525.setFont(new java.awt.Font("SansSerif", 1, 18)); // NOI18N
@@ -3190,8 +3349,7 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel15Layout.createSequentialGroup()
                         .addComponent(jLabel74)
                         .addGap(18, 18, 18)
-                        .addComponent(jTextFieldSignPkPassword1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(124, 124, 124)))
+                        .addComponent(jTextFieldSignPkPassword1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(258, 258, 258)
                 .addComponent(jButtonDecrypt, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(17, 17, 17))
@@ -3386,7 +3544,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         jTabbedPaneScreens.addTab("Transform", jPanelTransform);
 
-        jLabel7.setFont(new java.awt.Font("Leelawadee UI", 1, 18)); // NOI18N
+        jLabel7.setFont(new java.awt.Font("Malgun Gothic", 1, 16)); // NOI18N
         jLabel7.setText("Target file : ");
 
         jTextFieldDrop.setFont(new java.awt.Font("Segoe UI", 0, 16)); // NOI18N
@@ -3407,10 +3565,10 @@ public class PKIZ extends javax.swing.JFrame {
         jEditorPaneIdentifierResults.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jScrollPane3.setViewportView(jEditorPaneIdentifierResults);
 
-        jLabel8.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabel8.setFont(new java.awt.Font("Malgun Gothic", 1, 14)); // NOI18N
         jLabel8.setText("Results");
 
-        jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Drag & Drop Zone : ", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 14))); // NOI18N
+        jPanel12.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Drag & Drop Zone", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Malgun Gothic", 1, 14))); // NOI18N
         jPanel12.setName(""); // NOI18N
 
         jTextAreaDrop.setBackground(new java.awt.Color(227, 227, 227));
@@ -3452,26 +3610,29 @@ public class PKIZ extends javax.swing.JFrame {
         jPanelAnalyze.setLayout(jPanelAnalyzeLayout);
         jPanelAnalyzeLayout.setHorizontalGroup(
             jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1432, Short.MAX_VALUE)
             .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
                 .addGroup(jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jLabel8))
-                    .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
-                        .addGap(600, 600, 600)
-                        .addComponent(jButton8, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
-                        .addGap(435, 435, 435)
-                        .addGroup(jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
-                                .addComponent(jLabel7)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextFieldDrop, javax.swing.GroupLayout.PREFERRED_SIZE, 302, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton7, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)))))
-                .addContainerGap(485, Short.MAX_VALUE))
+                                .addContainerGap()
+                                .addComponent(jLabel8))
+                            .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
+                                .addGap(600, 600, 600)
+                                .addComponent(jButton8, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
+                                .addGap(435, 435, 435)
+                                .addGroup(jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jPanel12, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addGroup(jPanelAnalyzeLayout.createSequentialGroup()
+                                        .addComponent(jLabel7)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jTextFieldDrop, javax.swing.GroupLayout.PREFERRED_SIZE, 302, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(jButton7, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)))))
+                        .addGap(0, 488, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 1431, Short.MAX_VALUE))
+                .addContainerGap())
         );
         jPanelAnalyzeLayout.setVerticalGroup(
             jPanelAnalyzeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -3489,7 +3650,8 @@ public class PKIZ extends javax.swing.JFrame {
                 .addGap(14, 14, 14)
                 .addComponent(jLabel8)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 359, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 353, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         jTabbedPaneScreens.addTab("Analyze", jPanelAnalyze);
@@ -3659,13 +3821,11 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel7Layout.createSequentialGroup()
                         .addComponent(jRadioButtonDER, javax.swing.GroupLayout.PREFERRED_SIZE, 55, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jRadioButtonPEMorDER)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(jRadioButtonPEMorDER))
                     .addGroup(jPanel7Layout.createSequentialGroup()
                         .addComponent(jTextFieldConvertSourceFile, javax.swing.GroupLayout.PREFERRED_SIZE, 363, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButtonConvertSourceFile, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(jButtonConvertSourceFile, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(437, 437, 437)
                 .addComponent(jButtonConvertPEM, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -3716,7 +3876,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         jTabbedPaneScreens.addTab("Convert", jPanelConvert);
 
-        jPanel27.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "RSA Breaking Pollard Algorithm", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
+        jPanel27.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "RSA Breaking Pollard Algorithm", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Malgun Gothic", 1, 12))); // NOI18N
         jPanel27.setFont(new java.awt.Font("Segoe UI Semibold", 0, 12)); // NOI18N
 
         jLabel58.setText("Public Key :");
@@ -3774,12 +3934,16 @@ public class PKIZ extends javax.swing.JFrame {
             }
         });
 
-        jLabel18.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-        jLabel18.setText("Results");
-
-        jEditorPaneIdentifierResults1.setEditable(false);
-        jEditorPaneIdentifierResults1.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        jScrollPane10.setViewportView(jEditorPaneIdentifierResults1);
+        jButtonBruteForceCancel.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Red"));
+        jButtonBruteForceCancel.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jButtonBruteForceCancel.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonBruteForceCancel.setText("Cancel Brute Force");
+        jButtonBruteForceCancel.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        jButtonBruteForceCancel.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonBruteForceCancelActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel27Layout = new javax.swing.GroupLayout(jPanel27);
         jPanel27.setLayout(jPanel27Layout);
@@ -3801,51 +3965,72 @@ public class PKIZ extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButtonBrowseBruteFile, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 805, Short.MAX_VALUE)
-                .addComponent(jButtonBruteForce, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jButtonBruteForce, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonBruteForceCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(34, 34, 34))
-            .addComponent(jScrollPane10)
-            .addGroup(jPanel27Layout.createSequentialGroup()
-                .addComponent(jLabel18)
-                .addGap(0, 0, Short.MAX_VALUE))
         );
         jPanel27Layout.setVerticalGroup(
             jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel27Layout.createSequentialGroup()
+                .addGap(6, 6, 6)
+                .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel58)
+                    .addComponent(jTextFieldBrutePubKey, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonBrowseBrutePublicKey)
+                    .addComponent(jButtonBruteForce, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel27Layout.createSequentialGroup()
-                        .addGap(22, 22, 22)
-                        .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel58)
-                            .addComponent(jTextFieldBrutePubKey, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButtonBrowseBrutePublicKey))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel79)
-                            .addComponent(jTextFieldBruteFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButtonBrowseBruteFile)))
-                    .addGroup(jPanel27Layout.createSequentialGroup()
-                        .addGap(33, 33, 33)
-                        .addComponent(jButtonBruteForce, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(18, 18, 18)
-                .addComponent(jLabel18)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane10, javax.swing.GroupLayout.PREFERRED_SIZE, 329, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel27Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel79)
+                        .addComponent(jTextFieldBruteFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jButtonBrowseBruteFile))
+                    .addComponent(jButtonBruteForceCancel, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+
+        jEditorPaneIBruteForceResult.setEditable(false);
+        jEditorPaneIBruteForceResult.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+        jScrollPane10.setViewportView(jEditorPaneIBruteForceResult);
+
+        jLabel18.setFont(new java.awt.Font("Malgun Gothic", 1, 14)); // NOI18N
+        jLabel18.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel18.setText("Results");
+
+        jLabelLoading.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelLoading.setIcon(new javax.swing.ImageIcon(getClass().getResource("/loading.gif"))); // NOI18N
+        jLabelLoading.setAlignmentY(0.0F);
+        jLabelLoading.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
 
         javax.swing.GroupLayout jPanelBruteForceLayout = new javax.swing.GroupLayout(jPanelBruteForce);
         jPanelBruteForce.setLayout(jPanelBruteForceLayout);
         jPanelBruteForceLayout.setHorizontalGroup(
             jPanelBruteForceLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelBruteForceLayout.createSequentialGroup()
-                .addComponent(jPanel27, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanelBruteForceLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel27, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(jPanelBruteForceLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane10)))
                 .addContainerGap())
+            .addGroup(jPanelBruteForceLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabelLoading, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanelBruteForceLayout.setVerticalGroup(
             jPanelBruteForceLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanelBruteForceLayout.createSequentialGroup()
                 .addComponent(jPanel27, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 183, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(jPanelBruteForceLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabelLoading, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel18))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane10, javax.swing.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         jTabbedPaneScreens.addTab("Brute Force", jPanelBruteForce);
@@ -3986,7 +4171,7 @@ public class PKIZ extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jTextFieldGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 900, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButtonBrowseGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jButtonBrowseGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 172, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonBrowseGlobalOutput1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
@@ -3996,13 +4181,12 @@ public class PKIZ extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jTabbedPaneScreens, javax.swing.GroupLayout.PREFERRED_SIZE, 693, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButtonBrowseGlobalOutput1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 32, Short.MAX_VALUE)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jTextFieldGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabelGlobalDir)
-                        .addComponent(jButtonBrowseGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabelGlobalDir)
+                    .addComponent(jButtonBrowseGlobalOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonBrowseGlobalOutput1, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 7, Short.MAX_VALUE)
                 .addComponent(jPanelEvents, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, 0))
         );
@@ -4025,11 +4209,6 @@ public class PKIZ extends javax.swing.JFrame {
         jTabbedPaneScreens.setSelectedIndex(1);
     }//GEN-LAST:event_jButtonDashX512ActionPerformed
 
-    private void jButtonDashX511ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDashX511ActionPerformed
-        // TODO add your handling code here:
-        jTabbedPaneScreens.setSelectedIndex(2);
-    }//GEN-LAST:event_jButtonDashX511ActionPerformed
-
     private void jButtonDashX510ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDashX510ActionPerformed
         // TODO add your handling code here:
         jTabbedPaneScreens.setSelectedIndex(4);
@@ -4037,7 +4216,12 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButtonDashX509ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDashX509ActionPerformed
         // TODO add your handling code here:
-        jTabbedPaneScreens.setSelectedIndex(1);
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        c.add(Calendar.YEAR, 2);
+        Date newDate = c.getTime();
+        jDateChooserWExpiry.setDate(newDate);
+        jFrameCertWizard.setVisible(true);
     }//GEN-LAST:event_jButtonDashX509ActionPerformed
 
     private void jButtonDashAboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDashAboutActionPerformed
@@ -4310,7 +4494,7 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButtonBrowseBrutePublicKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseBrutePublicKeyActionPerformed
         // TODO add your handling code here:
-                int retour = jFileChooserFileOnly.showOpenDialog(this);
+        int retour = jFileChooserFileOnly.showOpenDialog(this);
         if (retour == JFileChooser.APPROVE_OPTION) {
             jTextFieldBrutePubKey.setText(jFileChooserFileOnly.getSelectedFile().getAbsolutePath());
         }
@@ -4326,16 +4510,99 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButtonBrowseBruteFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseBruteFileActionPerformed
         // TODO add your handling code here:
-                int retour = jFileChooserFileOnly.showOpenDialog(this);
+        int retour = jFileChooserFileOnly.showOpenDialog(this);
         if (retour == JFileChooser.APPROVE_OPTION) {
             jTextFieldBruteFile.setText(jFileChooserFileOnly.getSelectedFile().getAbsolutePath());
         }
     }//GEN-LAST:event_jButtonBrowseBruteFileActionPerformed
+    private Thread t1Q = new Thread();
 
     private void jButtonBruteForceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBruteForceActionPerformed
         // TODO add your handling code here:
-        RSABreaker.PollardForce(jTextFieldBrutePubKey.getText(), jTextFieldBruteFile.getText(), jTextFieldBrutePubKey.getText()+".result");
+        jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Starting " + jTextFieldBruteFile.getText() + " analysis. Results will be displayed here. Estimated time required : " + RSABreaker.estimatePollard(jTextFieldBrutePubKey.getText()) + " hours.\n");
+        t1Q = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                jLabelLoading.setVisible(true);
+                String solu = RSABreaker.PollardForce(jTextFieldBrutePubKey.getText(), jTextFieldBruteFile.getText(), jTextFieldBrutePubKey.getText() + ".result");
+                jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Solution found " + solu + ".\n");
+                jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Resulting file written : " + jTextFieldBrutePubKey.getText() + ".result \n");
+
+            }
+        });
+        t1Q.start();
     }//GEN-LAST:event_jButtonBruteForceActionPerformed
+
+    private void jButtonBruteForceCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBruteForceCancelActionPerformed
+        // TODO add your handling code here:
+        t1Q.stop();
+        jLabelLoading.setVisible(false);
+        jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Analysis Thread was interrupted by user.\n");
+    }//GEN-LAST:event_jButtonBruteForceCancelActionPerformed
+
+    private void jCheckBoxWGenPkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxWGenPkActionPerformed
+        // TODO add your handling code here:
+        JCheckBox cbLog = (JCheckBox) evt.getSource();
+        if (cbLog.isSelected()) {
+
+            jComboBoxWPK.setEnabled(false);
+        } else {
+            jComboBoxWPK.setEnabled(true);
+        }
+    }//GEN-LAST:event_jCheckBoxWGenPkActionPerformed
+
+    private void jButtonWCertGenerateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonWCertGenerateActionPerformed
+        // TODO add your handling code here:
+        String password1 = String.valueOf(jPasswordFieldW1.getPassword());
+        String password2 = String.valueOf(jPasswordFieldW2.getPassword());
+        if (!password1.equals(password2)) {
+            //
+            jLabelWConsole.setText("Passwords do not match.");
+            jLabelWConsole.setForeground(Color.red);
+            return;
+        } else if (password1.equals("") || password2.equals("")) {
+            jLabelWConsole.setText("Passwords are empty. You must set a password.");
+            jLabelWConsole.setForeground(Color.red);
+            return;
+        }
+        String parentCert = String.valueOf(jComboBoxWParents.getSelectedItem());
+        String privateKey = String.valueOf(jComboBoxWPK.getSelectedItem());
+        String typeCert = String.valueOf(jComboBoxWType.getSelectedItem());
+        String aliasCert = jTextFieldWAlias.getText();
+        String CNCert = jTextFieldWCN.getText();
+        String OUCert = jTextFieldWOU.getText();
+        String OrgCert = jTextFieldWOrg.getText();
+        Date expiryDateCert = jDateChooserWExpiry.getDate();
+        boolean genPK = jCheckBoxWGenPk.isSelected();
+        boolean exportCert = jCheckBoxWexport.isSelected();
+        if (typeCert.equals("CA Certificate")) {
+            CertificateChainBuilder.createCACert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, genPK, jTextFieldGlobalOutput.getText());
+
+        } else if (typeCert.equals("Client Certificate")) {
+
+        } else if (typeCert.equals("Server Certificate")) {
+
+        }
+        ((DefaultListModel) jListEvents.getModel()).addElement("Certificate " + aliasCert + " successfully generated.");
+    }//GEN-LAST:event_jButtonWCertGenerateActionPerformed
+
+    private void jPasswordFieldW2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jPasswordFieldW2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jPasswordFieldW2ActionPerformed
+
+    private void jComboBoxWTypeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxWTypeActionPerformed
+        // TODO add your handling code here:
+        if ("CA Certificate".equals(((String) jComboBoxWType.getSelectedItem()))) {
+            jComboBoxWParents.setEnabled(false);
+            jComboBoxWParents.setSelectedItem("None");
+        } else {
+            jComboBoxWParents.setEnabled(true);
+        }
+    }//GEN-LAST:event_jComboBoxWTypeActionPerformed
+
+    private void jCheckBoxWexportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxWexportActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCheckBoxWexportActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton8ActionPerformed
         // TODO add your handling code here:
@@ -4442,7 +4709,7 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton16ActionPerformed
 
-        jFrameX509vsPGP.setVisible(true);
+        jFrameCertWizard.setVisible(true);
     }// GEN-LAST:event_jButton16ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton4ActionPerformed
@@ -4450,7 +4717,9 @@ public class PKIZ extends javax.swing.JFrame {
     }// GEN-LAST:event_jButton4ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton5ActionPerformed
-        jFrameX509vsPGP.setVisible(false);
+        //jFrameCertWizard.setVisible(false);
+        CryptoGenerator g = new CryptoGenerator();
+        //g.generateCertificateFromPublicKeyAndPrivateKey(propFile, propFile, propFile, propFile, propFile, propFile, expiryDate, propFile, propFile, propFile);
     }// GEN-LAST:event_jButton5ActionPerformed
 
     private void jButtonKeyNameActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButtonKeyNameActionPerformed
@@ -4730,7 +4999,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JMenu helpMenu;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton4;
-    private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton7;
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButtonBrowseBruteFile;
@@ -4747,6 +5015,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonBrowseSignFile1;
     private javax.swing.JButton jButtonBrowseVerifyFile;
     private javax.swing.JButton jButtonBruteForce;
+    private javax.swing.JButton jButtonBruteForceCancel;
     private javax.swing.JButton jButtonCSRGenerate;
     private javax.swing.JButton jButtonCertGenerate;
     private javax.swing.JButton jButtonCipher;
@@ -4757,12 +5026,9 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonDashAnalyze;
     private javax.swing.JButton jButtonDashConvert;
     private javax.swing.JButton jButtonDashGenerate;
-    private javax.swing.JButton jButtonDashPGP;
-    private javax.swing.JButton jButtonDashScenarios;
     private javax.swing.JButton jButtonDashTransform;
     private javax.swing.JButton jButtonDashX509;
     private javax.swing.JButton jButtonDashX510;
-    private javax.swing.JButton jButtonDashX511;
     private javax.swing.JButton jButtonDashX512;
     private javax.swing.JButton jButtonDashX513;
     private javax.swing.JButton jButtonDashX514;
@@ -4789,6 +5055,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonSign;
     private javax.swing.JButton jButtonValidate;
     private javax.swing.JButton jButtonVerify;
+    private javax.swing.JButton jButtonWCertGenerate;
     private javax.swing.JCheckBox jCheckBox2;
     private javax.swing.JCheckBox jCheckBoxCustomCipher;
     private javax.swing.JCheckBox jCheckBoxCustomDecrypt;
@@ -4800,6 +5067,8 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxP12Write;
     private javax.swing.JCheckBox jCheckBoxPkCertainty;
     private javax.swing.JCheckBox jCheckBoxPkExpo;
+    private javax.swing.JCheckBox jCheckBoxWGenPk;
+    private javax.swing.JCheckBox jCheckBoxWexport;
     private javax.swing.JComboBox<String> jComboBoxAC;
     private javax.swing.JComboBox<String> jComboBoxAlgoCipher;
     private javax.swing.JComboBox<String> jComboBoxAlgoP12;
@@ -4817,19 +5086,23 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> jComboBoxSignPK1;
     private javax.swing.JComboBox<String> jComboBoxSignSignerCert;
     private javax.swing.JComboBox<String> jComboBoxVerifyCert;
+    private javax.swing.JComboBox<String> jComboBoxWPK;
+    private javax.swing.JComboBox<String> jComboBoxWParents;
+    private javax.swing.JComboBox<String> jComboBoxWType;
     private com.toedter.calendar.JDateChooser jDateChooserExpiry;
     private com.toedter.calendar.JDateChooser jDateChooserP12Expiry;
+    private com.toedter.calendar.JDateChooser jDateChooserWExpiry;
     private javax.swing.JDialog jDialogFileImport;
     private javax.swing.JDialog jDialogFileImportPublic;
+    private javax.swing.JEditorPane jEditorPaneIBruteForceResult;
     private javax.swing.JEditorPane jEditorPaneIdentifierResults;
-    private javax.swing.JEditorPane jEditorPaneIdentifierResults1;
     private javax.swing.JFileChooser jFileChooserDirectoriesOnly;
     private javax.swing.JFileChooser jFileChooserExportCRL;
     private javax.swing.JFileChooser jFileChooserExportCert;
     private javax.swing.JFileChooser jFileChooserFileOnly;
     private javax.swing.JFrame jFrameAbout;
+    private javax.swing.JFrame jFrameCertWizard;
     private javax.swing.JFrame jFrameSignature;
-    private javax.swing.JFrame jFrameX509vsPGP;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -4847,17 +5120,22 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel22;
     private javax.swing.JLabel jLabel23;
     private javax.swing.JLabel jLabel24;
+    private javax.swing.JLabel jLabel25;
     private javax.swing.JLabel jLabel26;
     private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel28;
+    private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel30;
     private javax.swing.JLabel jLabel31;
     private javax.swing.JLabel jLabel32;
     private javax.swing.JLabel jLabel33;
     private javax.swing.JLabel jLabel34;
+    private javax.swing.JLabel jLabel35;
     private javax.swing.JLabel jLabel36;
     private javax.swing.JLabel jLabel37;
+    private javax.swing.JLabel jLabel38;
+    private javax.swing.JLabel jLabel39;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel40;
     private javax.swing.JLabel jLabel41;
@@ -4877,6 +5155,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel54;
     private javax.swing.JLabel jLabel55;
     private javax.swing.JLabel jLabel56;
+    private javax.swing.JLabel jLabel57;
     private javax.swing.JLabel jLabel58;
     private javax.swing.JLabel jLabel59;
     private javax.swing.JLabel jLabel6;
@@ -4897,14 +5176,27 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel73;
     private javax.swing.JLabel jLabel74;
     private javax.swing.JLabel jLabel75;
+    private javax.swing.JLabel jLabel76;
     private javax.swing.JLabel jLabel77;
     private javax.swing.JLabel jLabel78;
     private javax.swing.JLabel jLabel79;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel80;
+    private javax.swing.JLabel jLabel81;
+    private javax.swing.JLabel jLabel82;
+    private javax.swing.JLabel jLabel83;
+    private javax.swing.JLabel jLabel84;
+    private javax.swing.JLabel jLabel85;
+    private javax.swing.JLabel jLabel86;
+    private javax.swing.JLabel jLabel87;
+    private javax.swing.JLabel jLabel88;
+    private javax.swing.JLabel jLabel89;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JLabel jLabelCertaintyValue;
     private java.awt.Label jLabelCertaintyValuePk;
     private javax.swing.JLabel jLabelGlobalDir;
+    private javax.swing.JLabel jLabelLoading;
+    private javax.swing.JLabel jLabelWConsole;
     private javax.swing.JList<String> jListEvents;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
@@ -4934,13 +5226,15 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelACManagement;
     private javax.swing.JPanel jPanelAnalyze;
     private javax.swing.JPanel jPanelBruteForce;
+    private javax.swing.JPanel jPanelCertWizard;
     private javax.swing.JPanel jPanelConvert;
     private javax.swing.JPanel jPanelDashboard;
     private javax.swing.JPanel jPanelEvents;
     private javax.swing.JPanel jPanelPGPKeyring;
     private javax.swing.JPanel jPanelSignature;
     private javax.swing.JPanel jPanelTransform;
-    private javax.swing.JPanel jPanelX509vsPGP;
+    private javax.swing.JPasswordField jPasswordFieldW1;
+    private javax.swing.JPasswordField jPasswordFieldW2;
     private javax.swing.JProgressBar jProgressBarEnigma;
     private javax.swing.JRadioButton jRadioButtonDER;
     private javax.swing.JRadioButton jRadioButtonPEM;
@@ -4952,7 +5246,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JScrollPane jScrollPane6;
-    private javax.swing.JScrollPane jScrollPane7;
     private javax.swing.JScrollPane jScrollPane8;
     private javax.swing.JScrollPane jScrollPane9;
     private javax.swing.JScrollPane jScrollPaneForEvents;
@@ -4968,7 +5261,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JTable jTableCRL;
     private javax.swing.JTable jTablePK;
     private javax.swing.JTextArea jTextArea2;
-    private javax.swing.JTextArea jTextArea3;
     private javax.swing.JTextArea jTextAreaBase64Data;
     private javax.swing.JTextArea jTextAreaDrop;
     private javax.swing.JTextArea jTextAreaOriginalData;
@@ -4981,6 +5273,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldCipherFile;
     private javax.swing.JTextField jTextFieldCipherOutputFilename;
     private javax.swing.JTextField jTextFieldConvertSourceFile;
+    private javax.swing.JTextField jTextFieldCountry;
     private javax.swing.JTextField jTextFieldDecryptOutputFilename;
     private javax.swing.JTextField jTextFieldDrop;
     private javax.swing.JTextField jTextFieldGlobalOutput;
@@ -5008,6 +5301,10 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldSignPkPassword1;
     private javax.swing.JTextField jTextFieldVerifyFile;
     private javax.swing.JTextField jTextFieldVerifyOutputFilename;
+    private javax.swing.JTextField jTextFieldWAlias;
+    private javax.swing.JTextField jTextFieldWCN;
+    private javax.swing.JTextField jTextFieldWOU;
+    private javax.swing.JTextField jTextFieldWOrg;
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem openMenuItem;
     private org.netbeans.swing.outline.Outline outline;

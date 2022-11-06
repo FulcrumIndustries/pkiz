@@ -1405,8 +1405,6 @@ public class CryptoGenerator {
                 X509v3CertificateBuilder v3CertGen = new X509v3CertificateBuilder(new X500Name(CN), BigInteger.ONE, startDate, endDate, new X500Name(CN), publicKeyInfo);
                 certHolder = v3CertGen.build(sigGen);
             }
-            // Save the public key to the file system, in the webapp this should
-            // get saved to some directory configurable via a properties file
             final File publicKeyFile = new File(targetDirectory + targetFilename);
             final JcaPEMWriter publicPemWriter = new JcaPEMWriter(
                     new FileWriter(publicKeyFile));
