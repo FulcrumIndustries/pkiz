@@ -105,7 +105,7 @@ public class PKCS12Builder {
         v3CertGen.addExtension(Extension.subjectKeyIdentifier, false, subPubKeyInfo);
         v3CertGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
 
-        KeyUsage usage = new KeyUsage(KeyUsage.keyCertSign | KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.dataEncipherment | KeyUsage.cRLSign);
+        KeyUsage usage = new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign); //| KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.dataEncipherment 
         v3CertGen.addExtension(Extension.keyUsage, false, usage);
 
         ASN1EncodableVector purposes = new ASN1EncodableVector();

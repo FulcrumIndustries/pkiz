@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -71,7 +72,13 @@ public class CRLManager {
             X509CertificateHolder caCertHolder = new JcaX509CertificateHolder(caCert);
             Integer idCAPk = caCertEnigma.getId_private_key();
             InputStream caPKstream = CryptoDAO.getKeyFromDB(idCAPk);
+            if (password.equals("")) {
+                password = CryptoDAO.getKeyPasswordFromDB(idCAPk);
+            }
             PrivateKey caPK = cg.getPrivateKey(caPKstream, password);
+            if (caPK == null) {
+                return "Failed";
+            }
             String sigAlgo = "SHA512withRSA";
             InputStream tempo = CryptoDAO.getCRLwithidCACertFromDB(certEnigma.getId_issuer_cert());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -136,12 +143,11 @@ public class CRLManager {
         return null;
     }
 
-    public synchronized X509CRLHolder initializeCRL(X509CertificateHolder cACert, PrivateKey cAKey, String signatureAlgorithm, Integer dayCycle, Date startDate, Date endDate) {
+    public synchronized X509CRLHolder initializeCRL(X500Name cASubject, PrivateKey cAKey, String signatureAlgorithm, Integer dayCycle, Date startDate, Date endDate) {
 
         try {
 
             Date thisUpdate = new Date();
-            X500Name cASubject = cACert.getSubject();
             X509v2CRLBuilder crlBuilder = new X509v2CRLBuilder(cASubject, thisUpdate);
             Date nextUpdate = new Date(thisUpdate.getTime() + dayCycle * DAY_IN_MS);
             crlBuilder.setNextUpdate(nextUpdate);
@@ -155,7 +161,7 @@ public class CRLManager {
             return null;
         }
     }
-
+    
     public synchronized X509CRLHolder getCurrentCRL(X509CertificateHolder cACert, PrivateKey cAKey, String signatureAlgorithm, final BigInteger serialNumber, X509CRLHolder currentCRL, Integer dayCycle) {
         try {
 

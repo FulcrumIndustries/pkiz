@@ -66,6 +66,7 @@ import javax.crypto.spec.DHParameterSpec;
 
 import javax.security.auth.x500.X500Principal;
 import jakarta.xml.bind.DatatypeConverter;
+import java.nio.charset.StandardCharsets;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 
@@ -167,6 +168,8 @@ import org.caulfield.pkiz.crypto.hash.HashCalculator;
 import org.caulfield.pkiz.crypto.x509.CRLManager;
 import org.caulfield.pkiz.crypto.x509.reader.PrivateKeyReader;
 import org.caulfield.pkiz.database.definition.CryptoDAO;
+import org.caulfield.pkiz.database.definition.EnigmaCertificate;
+import org.caulfield.pkiz.database.definition.EnigmaKey;
 import org.caulfield.pkiz.database.definition.HSQLLoader;
 import org.caulfield.pkiz.stream.StreamManager;
 
@@ -675,6 +678,26 @@ public class CryptoGenerator {
         return myPublicKey;
     }
 
+    private PublicKey buildPublicKeyFromPrivateKey(PrivateKey pk, String privateKeyPassword) {
+        RSAPrivateCrtKey privk = (RSAPrivateCrtKey) pk;
+        PublicKey myPublicKey = null;
+
+        KeyFactory keyFactory = null;
+        RSAPublicKeySpec publicKeySpec = new java.security.spec.RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
+
+        try {
+            keyFactory = KeyFactory.getInstance("RSA");
+            myPublicKey = keyFactory.generatePublic(publicKeySpec);
+
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
+        }
+
+        return myPublicKey;
+    }
+
     private PublicKey buildPublicKeyFromPrivateKey(InputStream filename, String privateKeyPassword) {
 
         PrivateKey myPrivateKey = null;
@@ -774,6 +797,93 @@ public class CryptoGenerator {
 
     }
 
+    public PublicKey buildPublicKeyFromPrivateKey(PrivateKey myPrivateKey) {
+        PublicKey myPublicKey = null;
+        if (myPrivateKey instanceof BCDSAPrivateKey) {
+            BCDSAPrivateKey privk = (BCDSAPrivateKey) myPrivateKey;
+
+            BigInteger X = privk.getX();
+            BigInteger P = privk.getParams().getP();
+            BigInteger G = privk.getParams().getG();
+            BigInteger Q = privk.getParams().getQ();
+            BigInteger Y = G.modPow(X, P);
+            KeyFactory keyFactory = null;
+            DSAPublicKeySpec publicKeySpec = new java.security.spec.DSAPublicKeySpec(Y, P, Q, G);
+
+            try {
+                keyFactory = KeyFactory.getInstance("DSA", "BC");
+                myPublicKey = keyFactory.generatePublic(publicKeySpec);
+
+            } catch (NoSuchAlgorithmException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (NoSuchProviderException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+            }
+
+        } else if (myPrivateKey instanceof RSAPrivateCrtKey) {
+            RSAPrivateCrtKey privk = (RSAPrivateCrtKey) myPrivateKey;
+
+            KeyFactory keyFactory = null;
+            RSAPublicKeySpec publicKeySpec = new java.security.spec.RSAPublicKeySpec(privk.getModulus(), privk.getPublicExponent());
+
+            try {
+                keyFactory = KeyFactory.getInstance("RSA", "BC");
+                myPublicKey = keyFactory.generatePublic(publicKeySpec);
+
+            } catch (NoSuchAlgorithmException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (NoSuchProviderException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+            }
+
+        } else if (myPrivateKey instanceof ECPrivateKey) {
+            ECPrivateKey ecPriv = (ECPrivateKey) myPrivateKey;
+            ECParameterSpec params = ecPriv.getParams();
+
+            // Calculate public key Y
+            ECPoint generator = params.getGenerator();
+            BigInteger[] wCoords = multiplyPointA(new BigInteger[]{
+                generator.getAffineX(), generator.getAffineY()},
+                    ecPriv.getS(), params);
+            ECPoint w = new ECPoint(wCoords[0], wCoords[1]);
+
+            try {
+                KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
+                myPublicKey = keyFactory.generatePublic(new ECPublicKeySpec(w, params));
+
+            } catch (NoSuchAlgorithmException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (InvalidKeySpecException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+
+            } catch (NoSuchProviderException ex) {
+                Logger.getLogger(CryptoGenerator.class
+                        .getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        if (myPublicKey == null) {
+            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() EMPTY KEY");
+        }
+        return myPublicKey;
+    }
+
     private static BigInteger[] multiplyPointA(BigInteger[] P, BigInteger k,
             ECParameterSpec params) {
         BigInteger[] Q = new BigInteger[]{null, null};
@@ -859,6 +969,22 @@ public class CryptoGenerator {
 
         return retour;
     }
+
+    private InputStream writePublicKey(PublicKey myPublicKey) {
+        InputStream inputStream = null;
+        try {
+            StringWriter sw = new StringWriter();
+            PemWriter publicPemWriterx = new PemWriter(new BufferedWriter(sw));
+            publicPemWriterx.writeObject(new PemObject("PUBLIC KEY", myPublicKey.getEncoded()));
+            publicPemWriterx.flush();
+            publicPemWriterx.close();
+            inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+        return inputStream;
+    }
 //That means if you take your second X.509 public key, and separate the first 32 characters:
 //
 //-----BEGIN PUBLIC KEY-----
@@ -882,7 +1008,11 @@ public class CryptoGenerator {
 //-----END RSA PUBLIC KEY-----
 
     public Integer getKeyIDFromComboBox(String comboText) {
-        return new Integer(comboText.substring(0, comboText.indexOf(".")));
+        return Integer.valueOf(comboText.substring(0, comboText.indexOf(".")));
+    }
+
+    public Integer getKeyIDFromParentComboBox(String comboText) {
+        return Integer.valueOf(comboText.substring(0, comboText.indexOf(".")));
     }
 
     public String generatePublicKeyFromPrivateKey(String privateKeyFilename, String privateKeyPassword, String targetDirectory, String fileOutName, String keyName) {
@@ -901,12 +1031,28 @@ public class CryptoGenerator {
         try {
             File file = new File(targetDirectory + fileOutName);
             FileInputStream inputStream = new FileInputStream(file);
-            CryptoDAO.insertKeyInDB(inputStream, keyName, "Inherited", realHash, idPrivateKey, false);
+            CryptoDAO.insertKeyInDB(inputStream, keyName, "Inherited", realHash, idPrivateKey, false, "");
         } catch (FileNotFoundException ex) {
             Logger.getLogger(CryptoGenerator.class
                     .getName()).log(Level.SEVERE, null, ex);
         }
         return output;
+    }
+
+    public EnigmaKey generatePublicKeyFromPrivateKey(PrivateKey privateKey, String privateKeyPassword, Integer idPrivateKey, String keyName) {
+        EnigmaKey ek = new EnigmaKey();
+        PublicKey myPublicKey = buildPublicKeyFromPrivateKey(privateKey, privateKeyPassword);
+        ek.setPubk(myPublicKey);
+        InputStream inputStream = writePublicKey(myPublicKey);
+        ek.setKeyStream(inputStream);
+        // Calculate SHA256
+        HashCalculator hashc = new HashCalculator();
+        String realHash = hashc.getStringChecksum(inputStream, HashCalculator.SHA256);
+
+        // Write in Database
+        long keyId = CryptoDAO.insertKeyInDB(inputStream, keyName, "Inherited", realHash, idPrivateKey, false, "");
+        ek.setId((int) keyId);
+        return ek;
     }
 
     public static String generatePKCS12(int size, String CN, String p12Password, String keyPassword, String directory, String publicExponent, int certainty, Date expiryDate, String targetFilename, boolean writeCrtPk, String issuer) {
@@ -1293,7 +1439,7 @@ public class CryptoGenerator {
                     JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(
                             PKCS8Generator.PBE_SHA1_3DES);
                     encryptorBuilder.setRandom(new SecureRandom());
-                    encryptorBuilder.setPasssword(privateKeyPassword.toCharArray());
+                    encryptorBuilder.setPassword(privateKeyPassword.toCharArray());
                     OutputEncryptor oe = encryptorBuilder.build();
                     JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, oe);
                     PemObject obj = gen.generate();
@@ -1308,9 +1454,9 @@ public class CryptoGenerator {
 
                 privatePemWriter.flush();
                 privatePemWriter.close();
-                byte[] encoded = privkey.getEncoded();
-                PrivateKeyInfo info = PrivateKeyInfo.getInstance(ASN1Sequence.getInstance(encoded));
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.writePrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
+                //byte[] encoded = privkey.getEncoded();
+                //PrivateKeyInfo info = PrivateKeyInfo.getInstance(ASN1Sequence.getInstance(encoded));
+                //System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.writePrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
 
             } catch (IOException | OperatorCreationException ex) {
                 Logger.getLogger(CryptoGenerator.class
@@ -1326,12 +1472,92 @@ public class CryptoGenerator {
         try {
             File file = new File(directory + fileOutName);
             FileInputStream inputStream = new FileInputStream(file);
-            CryptoDAO.insertKeyInDB(inputStream, keyname, algo, realHash, 0, true);
+            CryptoDAO.insertKeyInDB(inputStream, keyname, algo, realHash, 0, true, privateKeyPassword);
         } catch (IOException ex) {
             Logger.getLogger(CryptoGenerator.class
                     .getName()).log(Level.SEVERE, null, ex);
         }
         return algo + " Private key " + directory + fileOutName + " successfully created" + (hasPassword ? " with password " + privateKeyPassword + "." : " without password.");
+    }
+
+    public EnigmaKey buildPrivateKey(String privateKeyPassword, int size, String publicExponent, int certainty, String algo, String keyname) {
+        AsymmetricCipherKeyPair pair = null;
+        PrivateKey privkey = null;
+        EnigmaKey ek = new EnigmaKey();
+
+        boolean hasPassword = false;
+
+        if ("RSA".equals(algo)) {
+            pair = createRSAKey(size, publicExponent, certainty);
+        } else if ("DSA".equals(algo)) {
+            pair = createDSAKey(size, publicExponent, certainty);
+        }
+
+        AsymmetricKeyParameter privateKey = pair.getPrivate();
+
+        try {
+            PrivateKeyInfo privateKeyInfo = PrivateKeyInfoFactory
+                    .createPrivateKeyInfo(privateKey);
+            byte[] serializedPrivateBytes = privateKeyInfo.getEncoded();
+            String serializedPrivate = Base64
+                    .toBase64String(serializedPrivateBytes);
+
+            System.out.println(serializedPrivate);
+
+            JcaPEMKeyConverter conv = new JcaPEMKeyConverter();
+
+            privkey = conv.getPrivateKey(privateKeyInfo);
+            Security.addProvider(new BouncyCastleProvider());
+
+            //  final File privateKeyFile = new File(directory + fileOutName);
+            StringWriter sw = new StringWriter();
+            final JcaPEMWriter privatePemWriter = new JcaPEMWriter(sw);
+
+            if (privateKeyPassword != null && !"".equals(privateKeyPassword)) {
+                hasPassword = true;
+            }
+            PemObject obj =null;
+            if (hasPassword) {
+                JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(PKCS8Generator.PBE_SHA1_3DES);
+                encryptorBuilder.setRandom(new SecureRandom());
+                encryptorBuilder.setPassword(privateKeyPassword.toCharArray());
+                OutputEncryptor oe = encryptorBuilder.build();
+                JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, oe);
+                 obj = gen.generate();
+                privatePemWriter.writeObject(obj);
+            } else {
+                //  privatePemWriter.writeObject(privkey);
+
+                JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, null);
+                 obj = gen.generate();
+                privatePemWriter.writeObject(obj);
+            }
+
+            privatePemWriter.flush();
+            privatePemWriter.close();
+
+            // Calculate SHA256
+            HashCalculator hashc = new HashCalculator();
+            System.out.println("PK PARTY " + sw.toString());
+            InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes());
+            byte[] hash = hashc.checksum(inputStream, HashCalculator.SHA256);
+            String realHash = DatatypeConverter.printHexBinary(hash);
+            // Write in Database
+            long pkID = CryptoDAO.insertKeyInDB(inputStream, keyname, algo, realHash, 0, true, privateKeyPassword);
+            ek.setKeyStream(inputStream);
+            ek.setId((int) pkID);
+            ek.setPk(privkey);
+            ek.setPemObject(obj);
+        } catch (IOException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+
+        } catch (OperatorCreationException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+        return ek;
     }
 
     public boolean quickCheckPublicKey(File publicKeyFile) throws FileNotFoundException, IOException {
@@ -1358,6 +1584,39 @@ public class CryptoGenerator {
     public boolean quickCheckPrivateKey(InputStream privateKeyFile) throws FileNotFoundException, IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(privateKeyFile));
         return br.readLine().contains("PRIVATE");
+    }
+
+    public EnigmaKey getPrivateKeyFromCombo(String comboText) {
+        Integer privKid = getKeyIDFromComboBox(comboText);
+        PrivateKey privateKey = null;
+        try {
+            InputStream stPrivKey = CryptoDAO.getKeyFromDB(privKid);
+            String stPrivKeyPassword = CryptoDAO.getKeyPasswordFromDB(privKid);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKeyFromCombo()::: " + stPrivKeyPassword);
+            privateKey = getPrivateKey(stPrivKey, stPrivKeyPassword);
+            EnigmaKey en = new EnigmaKey(privateKey, null, stPrivKeyPassword);
+            return en;
+        } catch (EnigmaException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public EnigmaKey getPrivateKeyFromParentCombo(String comboText) {
+        Integer certID = getKeyIDFromParentComboBox(comboText);
+        PrivateKey privateKey = null;
+        try {
+            EnigmaCertificate stCert = CryptoDAO.getEnigmaCertFromDB(certID, null);
+            InputStream stPrivKey = CryptoDAO.getKeyFromDB(stCert.getId_private_key());
+            EnigmaKey en = CryptoDAO.getEnigmaKeyFromDB(stCert.getId_private_key());
+            en.setPk(getPrivateKey(en.getKeyStream(), en.getPassword()));
+            return en;
+        } catch (EnigmaException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
     public String generateCertificateFromPublicKeyAndPrivateKey(String CN, String pubKey, String privKey, String privPassword, String targetDirectory, String targetFilename, Date expiryDate, String algo, String certVersion, String certName) {
@@ -1428,7 +1687,7 @@ public class CryptoGenerator {
             Date CRLstartDate = new Date();
             Integer cycleId = 30;
             Date CRLendDate = new Date(CRLstartDate.getTime() + cycleId * CRLManager.DAY_IN_MS);
-            X509CRLHolder crl = crlm.initializeCRL(certHolder, privateKey, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+            X509CRLHolder crl = crlm.initializeCRL(certHolder.getSubject(), privateKey, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
             InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
 
             // Save the CRL in DB

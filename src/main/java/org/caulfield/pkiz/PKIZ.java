@@ -62,6 +62,7 @@ import javax.swing.tree.TreeSelectionModel;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.caulfield.pkiz.analyzer.FileAnalyzer;
+import org.caulfield.pkiz.crypto.CertType;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
 import org.caulfield.pkiz.crypto.EnigmaException;
 import org.caulfield.pkiz.crypto.x509.CRLManager;
@@ -117,7 +118,7 @@ public class PKIZ extends javax.swing.JFrame {
         } catch (IOException ex) {
             Logger.getLogger(PKIZ.class.getName()).log(Level.SEVERE, null, ex);
         }
-        jSpinnerKeySize.setValue(new Integer(props.getProperty("defaultKeySize")));
+        jSpinnerKeySize.setValue(Integer.valueOf(props.getProperty("defaultKeySize")));
         jTextAreaDrop.setDropTarget(new DropTarget() {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
@@ -214,6 +215,7 @@ public class PKIZ extends javax.swing.JFrame {
         try {
             jComboBoxSignSignerCert.removeAllItems();
             jComboBoxCipherCert.removeAllItems();
+            jComboBoxWParents.removeAllItems();
             HSQLLoader database = new HSQLLoader();
             ResultSet f = database.runQuery("select ID_CERT, CERTNAME from CERTIFICATES");
             while (f.next()) {
@@ -315,7 +317,7 @@ public class PKIZ extends javax.swing.JFrame {
 //        popupMenu.add(rootCert);
         JMenuItem subCert = new JMenuItem("+ Create New Sub Certificate");
         subCert.addActionListener((ActionEvent e) -> {
-            Integer idCert = (Integer) outline.getModel().getValueAt(outline.getSelectedRow(), 1);
+            Integer idCert = (int) outline.getModel().getValueAt(outline.getSelectedRow(), 1);
             CertificateChainManager cm = new CertificateChainManager();
             long idGeneratedCert = cm.buildIntermediateCertificate(idCert, "CN=SUBTEST,O=SUB", "");
             Integer fff = (int) (long) idGeneratedCert;
@@ -471,7 +473,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         JMenuItem exportCRL = new JMenuItem("> Export CRL");
         exportCRL.addActionListener((ActionEvent e) -> {
-            Integer idCrl = (Integer) jTableCRL.getModel().getValueAt(jTableCRL.getSelectedRow(), 0);
+            Integer idCrl = (int)jTableCRL.getModel().getValueAt(jTableCRL.getSelectedRow(), 0);
             FileFilter ft = new FileNameExtensionFilter("CRL file (.crl)", "crl");
             jFileChooserExportCRL.resetChoosableFileFilters();
             jFileChooserExportCRL.setFileFilter(ft);
@@ -586,9 +588,9 @@ public class PKIZ extends javax.swing.JFrame {
         outline.getColumnModel().getColumn(3).setPreferredWidth(260);
         outline.getColumnModel().getColumn(4).setPreferredWidth(140);
         outline.getColumnModel().getColumn(5).setPreferredWidth(100);
-        outline.getColumnModel().getColumn(6).setPreferredWidth(100);
+        outline.getColumnModel().getColumn(6).setPreferredWidth(90);
         outline.getColumnModel().getColumn(7).setPreferredWidth(60);
-        outline.getColumnModel().getColumn(8).setPreferredWidth(60);
+        outline.getColumnModel().getColumn(8).setPreferredWidth(75);
         outline.getColumnModel().getColumn(9).setPreferredWidth(100);
         outline.getColumnModel().getColumn(10).setPreferredWidth(100);
         buildPopupMenuX509();
@@ -661,7 +663,7 @@ public class PKIZ extends javax.swing.JFrame {
                 jComboBoxSignPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
                 jComboBoxCertPk.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
                 jComboBoxCipherCert.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxWPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                //jComboBoxWPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
             }
             buildPopupMenuX509Keys();
         } catch (SQLException ex) {
@@ -723,8 +725,6 @@ public class PKIZ extends javax.swing.JFrame {
         jComboBoxWParents = new javax.swing.JComboBox<>();
         jComboBoxWType = new javax.swing.JComboBox<>();
         jTextFieldWAlias = new javax.swing.JTextField();
-        jComboBoxWPK = new javax.swing.JComboBox<>();
-        jCheckBoxWGenPk = new javax.swing.JCheckBox();
         jTextFieldWCN = new javax.swing.JTextField();
         jTextFieldWOrg = new javax.swing.JTextField();
         jTextFieldWOU = new javax.swing.JTextField();
@@ -735,7 +735,6 @@ public class PKIZ extends javax.swing.JFrame {
         jLabel25 = new javax.swing.JLabel();
         jLabel29 = new javax.swing.JLabel();
         jLabel38 = new javax.swing.JLabel();
-        jLabel35 = new javax.swing.JLabel();
         jLabel39 = new javax.swing.JLabel();
         jLabel57 = new javax.swing.JLabel();
         jLabel76 = new javax.swing.JLabel();
@@ -1176,19 +1175,21 @@ public class PKIZ extends javax.swing.JFrame {
                 .addContainerGap(18, Short.MAX_VALUE))
         );
 
+        jFrameCertWizard.setTitle("Certificate Wizard");
         jFrameCertWizard.setAlwaysOnTop(true);
         jFrameCertWizard.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
         jFrameCertWizard.setLocation(new java.awt.Point(200, 200));
-        jFrameCertWizard.setMaximumSize(new java.awt.Dimension(550, 470));
-        jFrameCertWizard.setMinimumSize(new java.awt.Dimension(550, 470));
-        jFrameCertWizard.setPreferredSize(new java.awt.Dimension(550, 470));
-        jFrameCertWizard.getContentPane().setLayout(new javax.swing.BoxLayout(jFrameCertWizard.getContentPane(), javax.swing.BoxLayout.LINE_AXIS));
+        jFrameCertWizard.setMaximumSize(new java.awt.Dimension(490, 430));
+        jFrameCertWizard.setMinimumSize(new java.awt.Dimension(490, 430));
+        jFrameCertWizard.setPreferredSize(new java.awt.Dimension(490, 430));
+        jFrameCertWizard.getContentPane().setLayout(new java.awt.GridLayout());
 
-        jPanelCertWizard.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Fastest Wizard"));
+        jPanelCertWizard.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Properties"));
 
         jComboBoxWParents.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "None" }));
+        jComboBoxWParents.setEnabled(false);
 
-        jComboBoxWType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Server Certificate", "Client Certificate", "CA Certificate" }));
+        jComboBoxWType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "CA Certificate", "Intermediate Certificate", "End User Client Certificate", "End User Server Certificate" }));
         jComboBoxWType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxWTypeActionPerformed(evt);
@@ -1197,15 +1198,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         jTextFieldWAlias.setText("MyCertificateName");
 
-        jComboBoxWPK.setEnabled(false);
-
-        jCheckBoxWGenPk.setSelected(true);
-        jCheckBoxWGenPk.setText("Generate One");
-        jCheckBoxWGenPk.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxWGenPkActionPerformed(evt);
-            }
-        });
+        jTextFieldWCN.setText("Common Name");
 
         jTextFieldWOrg.setText("Company");
 
@@ -1224,10 +1217,13 @@ public class PKIZ extends javax.swing.JFrame {
         });
 
         jButtonWCertGenerate.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
-        jButtonWCertGenerate.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonWCertGenerate.setFont(new java.awt.Font("Lato", 1, 18)); // NOI18N
         jButtonWCertGenerate.setForeground(new java.awt.Color(255, 255, 255));
         jButtonWCertGenerate.setText("Create Certificate");
         jButtonWCertGenerate.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonWCertGenerate.setMaximumSize(new java.awt.Dimension(150, 26));
+        jButtonWCertGenerate.setMinimumSize(new java.awt.Dimension(120, 26));
+        jButtonWCertGenerate.setPreferredSize(new java.awt.Dimension(120, 26));
         jButtonWCertGenerate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonWCertGenerateActionPerformed(evt);
@@ -1239,8 +1235,6 @@ public class PKIZ extends javax.swing.JFrame {
         jLabel29.setText("Type : ");
 
         jLabel38.setText("Certificate Alias : ");
-
-        jLabel35.setText("Private Key : ");
 
         jLabel39.setText("Organization : ");
 
@@ -1260,7 +1254,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         jLabel85.setText("(optional)");
 
-        jLabel86.setText("Password : ");
+        jLabel86.setText("Private Key Password : ");
 
         jPasswordFieldW1.setText("jPasswordField1");
 
@@ -1286,73 +1280,84 @@ public class PKIZ extends javax.swing.JFrame {
         jPanelCertWizard.setLayout(jPanelCertWizardLayout);
         jPanelCertWizardLayout.setHorizontalGroup(
             jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelCertWizardLayout.createSequentialGroup()
+            .addComponent(jButtonWCertGenerate, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jButtonWCertGenerate, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanelCertWizardLayout.createSequentialGroup()
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
                         .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel29)
-                                    .addComponent(jLabel35)
-                                    .addComponent(jLabel38)
-                                    .addComponent(jLabel39)
-                                    .addComponent(jLabel80)
-                                    .addComponent(jLabel81)
-                                    .addComponent(jLabel84)
-                                    .addComponent(jLabel83))
-                                .addComponent(jLabel25)
-                                .addComponent(jLabel86))
-                            .addComponent(jLabel89))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jLabel84)
+                            .addComponent(jLabel38)
+                            .addComponent(jLabel29))
+                        .addGap(29, 29, 29)
                         .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jCheckBoxWexport)
                             .addGroup(jPanelCertWizardLayout.createSequentialGroup()
-                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jComboBoxWParents, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jTextFieldCountry)
-                                    .addComponent(jTextFieldWOU)
-                                    .addComponent(jTextFieldWOrg)
-                                    .addComponent(jTextFieldWAlias)
-                                    .addComponent(jComboBoxWType, 0, 200, Short.MAX_VALUE)
-                                    .addComponent(jComboBoxWPK, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jTextFieldWCN))
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jComboBoxWType, javax.swing.GroupLayout.Alignment.LEADING, 0, 200, Short.MAX_VALUE)
+                                    .addComponent(jComboBoxWParents, javax.swing.GroupLayout.Alignment.LEADING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel82)
-                                    .addComponent(jCheckBoxWGenPk)
-                                    .addComponent(jLabel57)
-                                    .addComponent(jLabel76)
-                                    .addComponent(jLabel85)
-                                    .addComponent(jLabel88)))
+                                .addComponent(jLabel85)
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                                .addComponent(jTextFieldWAlias, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel88)
+                                .addGap(0, 0, Short.MAX_VALUE))))
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                        .addComponent(jLabel89)
+                        .addGap(0, 0, Short.MAX_VALUE))))
+            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel86)
+                            .addComponent(jLabel25)
+                            .addComponent(jLabel39)
+                            .addComponent(jLabel80)
+                            .addComponent(jLabel81)
+                            .addComponent(jLabel83))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanelCertWizardLayout.createSequentialGroup()
                                 .addComponent(jPasswordFieldW1, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jLabel87)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jPasswordFieldW2, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addGap(14, 14, 14))
-            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
-                .addGap(23, 23, 23)
-                .addComponent(jLabelWConsole, javax.swing.GroupLayout.PREFERRED_SIZE, 420, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addComponent(jPasswordFieldW2, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jTextFieldWOrg, javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextFieldWCN, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel57))
+                            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 200, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldCountry, javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextFieldWOU, javax.swing.GroupLayout.Alignment.LEADING))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel76)
+                                    .addComponent(jLabel82)))
+                            .addComponent(jCheckBoxWexport)))
+                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
+                        .addGap(20, 20, 20)
+                        .addComponent(jLabelWConsole, javax.swing.GroupLayout.PREFERRED_SIZE, 420, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(12, Short.MAX_VALUE))
         );
         jPanelCertWizardLayout.setVerticalGroup(
             jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanelCertWizardLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel84)
-                    .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jComboBoxWParents, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel85)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanelCertWizardLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel29)
                     .addComponent(jComboBoxWType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jComboBoxWParents, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel85)
+                    .addComponent(jLabel84))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextFieldWAlias, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1360,53 +1365,46 @@ public class PKIZ extends javax.swing.JFrame {
                     .addComponent(jLabel88))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jComboBoxWPK, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel35)
-                    .addComponent(jCheckBoxWGenPk))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel86)
                     .addComponent(jPasswordFieldW1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPasswordFieldW2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel87))
-                .addGap(7, 7, 7)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldWCN, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel25))
+                    .addComponent(jLabel25)
+                    .addComponent(jTextFieldWCN, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jTextFieldWOrg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel39)
-                    .addComponent(jLabel57))
+                    .addComponent(jLabel57)
+                    .addComponent(jLabel39))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldWOU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel80)
+                    .addComponent(jTextFieldWOU, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel76))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldCountry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel81)
+                    .addComponent(jTextFieldCountry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel82))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel83))
-                    .addGroup(jPanelCertWizardLayout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jCheckBoxWexport, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel89, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jDateChooserWExpiry, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jLabel83, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanelCertWizardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel89, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jCheckBoxWexport))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jButtonWCertGenerate, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabelWConsole, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(1, 1, 1))
         );
 
         jFrameCertWizard.getContentPane().add(jPanelCertWizard);
+        jPanelCertWizard.getAccessibleContext().setAccessibleName("Certificate Properties");
 
         jDialogFileImport.setTitle("Import Key");
         jDialogFileImport.setAlwaysOnTop(true);
@@ -4221,6 +4219,7 @@ public class PKIZ extends javax.swing.JFrame {
         c.add(Calendar.YEAR, 2);
         Date newDate = c.getTime();
         jDateChooserWExpiry.setDate(newDate);
+        jTextFieldCountry.setText("US");
         jFrameCertWizard.setVisible(true);
     }//GEN-LAST:event_jButtonDashX509ActionPerformed
 
@@ -4519,6 +4518,11 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButtonBruteForceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBruteForceActionPerformed
         // TODO add your handling code here:
+        if (jTextFieldBruteFile.getText().equals("") || jTextFieldBrutePubKey.getText().equals("")) {
+            jEditorPaneIBruteForceResult.setText("Form wasn't filled properly.");
+            jEditorPaneIBruteForceResult.setForeground(Color.red);
+            return;
+        }
         jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Starting " + jTextFieldBruteFile.getText() + " analysis. Results will be displayed here. Estimated time required : " + RSABreaker.estimatePollard(jTextFieldBrutePubKey.getText()) + " hours.\n");
         t1Q = new Thread(new Runnable() {
             @Override
@@ -4540,17 +4544,6 @@ public class PKIZ extends javax.swing.JFrame {
         jEditorPaneIBruteForceResult.setText(jEditorPaneIBruteForceResult.getText() + "Analysis Thread was interrupted by user.\n");
     }//GEN-LAST:event_jButtonBruteForceCancelActionPerformed
 
-    private void jCheckBoxWGenPkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxWGenPkActionPerformed
-        // TODO add your handling code here:
-        JCheckBox cbLog = (JCheckBox) evt.getSource();
-        if (cbLog.isSelected()) {
-
-            jComboBoxWPK.setEnabled(false);
-        } else {
-            jComboBoxWPK.setEnabled(true);
-        }
-    }//GEN-LAST:event_jCheckBoxWGenPkActionPerformed
-
     private void jButtonWCertGenerateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonWCertGenerateActionPerformed
         // TODO add your handling code here:
         String password1 = String.valueOf(jPasswordFieldW1.getPassword());
@@ -4566,23 +4559,34 @@ public class PKIZ extends javax.swing.JFrame {
             return;
         }
         String parentCert = String.valueOf(jComboBoxWParents.getSelectedItem());
-        String privateKey = String.valueOf(jComboBoxWPK.getSelectedItem());
+
         String typeCert = String.valueOf(jComboBoxWType.getSelectedItem());
         String aliasCert = jTextFieldWAlias.getText();
         String CNCert = jTextFieldWCN.getText();
         String OUCert = jTextFieldWOU.getText();
         String OrgCert = jTextFieldWOrg.getText();
         Date expiryDateCert = jDateChooserWExpiry.getDate();
-        boolean genPK = jCheckBoxWGenPk.isSelected();
+
         boolean exportCert = jCheckBoxWexport.isSelected();
         if (typeCert.equals("CA Certificate")) {
-            CertificateChainBuilder.createCACert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, genPK, jTextFieldGlobalOutput.getText());
-
-        } else if (typeCert.equals("Client Certificate")) {
-
-        } else if (typeCert.equals("Server Certificate")) {
-
+            CertificateChainBuilder.createCACert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1);
+        } else if (typeCert.equals("Intermediate Certificate")) {
+            CertificateChainBuilder.createIntermediateCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert);
+        } else if (typeCert.equals("End User Client Certificate")) {
+            CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_CLIENT);
+        } else if (typeCert.equals("End User Server Certificate")) {
+            CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_SERVER);
+       } else if (typeCert.equals("End User Multipurpose Certificate")) {
+            CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_MULTI);
         }
+        refreshCertificateCombos();
+        refreshPKObjects();
+        refreshPubKObjects();
+        refreshX509KeyTable();
+        refreshX509CertOutline();
+        jLabelWConsole.setForeground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
+        jLabelWConsole.setText("Generation successful.");
+
         ((DefaultListModel) jListEvents.getModel()).addElement("Certificate " + aliasCert + " successfully generated.");
     }//GEN-LAST:event_jButtonWCertGenerateActionPerformed
 
@@ -4594,7 +4598,7 @@ public class PKIZ extends javax.swing.JFrame {
         // TODO add your handling code here:
         if ("CA Certificate".equals(((String) jComboBoxWType.getSelectedItem()))) {
             jComboBoxWParents.setEnabled(false);
-            jComboBoxWParents.setSelectedItem("None");
+            //jComboBoxWParents.setSelectedItem("None");
         } else {
             jComboBoxWParents.setEnabled(true);
         }
@@ -5067,7 +5071,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBoxP12Write;
     private javax.swing.JCheckBox jCheckBoxPkCertainty;
     private javax.swing.JCheckBox jCheckBoxPkExpo;
-    private javax.swing.JCheckBox jCheckBoxWGenPk;
     private javax.swing.JCheckBox jCheckBoxWexport;
     private javax.swing.JComboBox<String> jComboBoxAC;
     private javax.swing.JComboBox<String> jComboBoxAlgoCipher;
@@ -5086,7 +5089,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> jComboBoxSignPK1;
     private javax.swing.JComboBox<String> jComboBoxSignSignerCert;
     private javax.swing.JComboBox<String> jComboBoxVerifyCert;
-    private javax.swing.JComboBox<String> jComboBoxWPK;
     private javax.swing.JComboBox<String> jComboBoxWParents;
     private javax.swing.JComboBox<String> jComboBoxWType;
     private com.toedter.calendar.JDateChooser jDateChooserExpiry;
@@ -5131,7 +5133,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel32;
     private javax.swing.JLabel jLabel33;
     private javax.swing.JLabel jLabel34;
-    private javax.swing.JLabel jLabel35;
     private javax.swing.JLabel jLabel36;
     private javax.swing.JLabel jLabel37;
     private javax.swing.JLabel jLabel38;

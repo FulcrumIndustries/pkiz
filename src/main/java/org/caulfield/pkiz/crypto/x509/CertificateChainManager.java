@@ -90,7 +90,13 @@ public class CertificateChainManager {
                 String certName = set.getString("CERTNAME");
                 Integer associatedPK = set.getInt("ID_PRIVATEKEY");
                 InputStream caPKIS = CryptoDAO.getKeyFromDB(associatedPK);
+                if (caPKPassword.equals("")) {
+                    caPKPassword = CryptoDAO.getKeyPasswordFromDB(associatedPK);
+                }
                 PrivateKey caPK = cg.getPrivateKey(caPKIS, caPKPassword);
+                if (caPK == null) {
+                    return 0;
+                }
                 String pkAlgo = caPK.getAlgorithm();
                 AsymmetricCipherKeyPair kp = CryptoGenerator.createKeyPair(pkAlgo);
                 PrivateKeyInfo privateKeyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate());
@@ -103,8 +109,8 @@ public class CertificateChainManager {
                 InputStream intermediatePubKStream = StreamManager.convertPublicKeyToInputStream(intermediatePubK);
                 InputStream intermediatePKStream2 = StreamManager.convertPrivateKeyToInputStream(intermediatePK, null);
                 InputStream intermediatePubKStream2 = StreamManager.convertPublicKeyToInputStream(intermediatePubK);
-                long privKeyID = CryptoDAO.insertKeyInDB(intermediatePKStream, "SUB_" + certName + "_private", pkAlgo, hc.getStringChecksum(intermediatePKStream2, HashCalculator.SHA256), 0, true);
-                long pubKeyID = CryptoDAO.insertKeyInDB(intermediatePubKStream, "SUB_" + certName + "_public", "Inherited", hc.getStringChecksum(intermediatePubKStream2, HashCalculator.SHA256), (int) (long) privKeyID, false);
+                long privKeyID = CryptoDAO.insertKeyInDB(intermediatePKStream, "SUB_" + certName + "_private", pkAlgo, hc.getStringChecksum(intermediatePKStream2, HashCalculator.SHA256), 0, true, caPKPassword);
+                long pubKeyID = CryptoDAO.insertKeyInDB(intermediatePubKStream, "SUB_" + certName + "_public", "Inherited", hc.getStringChecksum(intermediatePubKStream2, HashCalculator.SHA256), (int) (long) privKeyID, false, "");
                 InputStream certStream = StreamManager.convertCertificateToInputStream(cert);
                 InputStream certStream2 = StreamManager.convertCertificateToInputStream(cert);
                 String thumbPrint = hc.getThumbprint(cert.getEncoded());
@@ -119,7 +125,7 @@ public class CertificateChainManager {
                 System.out.println("SERIAL AFFECTED TO SUB CERTIFICATE : " + affectedSerial.intValue());
                 certID = CryptoDAO.insertCertInDB(certStream, "SUB_" + certName, subject, hc.getStringChecksum(certStream2, HashCalculator.SHA256), algo, (int) (long) privKeyID, thumbPrint, idParentCert, 2, cert.getNotAfter(), affectedSerial, BigInteger.ONE, CRLstartDate);
                 // Generate the associated CRL
-                X509CRLHolder crl = crlm.initializeCRL(cert, intermediatePK, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+                X509CRLHolder crl = crlm.initializeCRL(cert.getSubject(), intermediatePK, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
                 InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
                 // Save the CRL of the sub in DB
                 CryptoDAO.insertCRLInDB(crlStream, (int) certID, cycleId, CRLstartDate, CRLendDate);
@@ -151,7 +157,13 @@ public class CertificateChainManager {
                 String certName = set.getString("CERTNAME");
                 Integer associatedPK = set.getInt("ID_PRIVATEKEY");
                 InputStream caPKIS = CryptoDAO.getKeyFromDB(associatedPK);
+                if (caPKPassword.equals("")) {
+                    caPKPassword = CryptoDAO.getKeyPasswordFromDB(idParentCert);
+                }
                 PrivateKey caPK = cg.getPrivateKey(caPKIS, caPKPassword);
+                if (caPK == null) {
+                    return 0;
+                }
                 String pkAlgo = caPK.getAlgorithm();
                 AsymmetricCipherKeyPair kp = CryptoGenerator.createKeyPair(pkAlgo);
                 PrivateKeyInfo privateKeyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate());
@@ -164,8 +176,8 @@ public class CertificateChainManager {
                 InputStream intermediatePKStream2 = StreamManager.convertPrivateKeyToInputStream(intermediatePK, null);
                 InputStream intermediatePubKStream2 = StreamManager.convertPublicKeyToInputStream(intermediatePubK);
                 HashCalculator hc = new HashCalculator();
-                long privKeyID = CryptoDAO.insertKeyInDB(intermediatePKStream, "USER_" + certName + "_private", pkAlgo, hc.getStringChecksum(intermediatePKStream2, HashCalculator.SHA256), 0, true);
-                long pubKeyID = CryptoDAO.insertKeyInDB(intermediatePubKStream, "USER_" + certName + "_public", "Inherited", hc.getStringChecksum(intermediatePubKStream2, HashCalculator.SHA256), (int) (long) privKeyID, false);
+                long privKeyID = CryptoDAO.insertKeyInDB(intermediatePKStream, "USER_" + certName + "_private", pkAlgo, hc.getStringChecksum(intermediatePKStream2, HashCalculator.SHA256), 0, true, caPKPassword);
+                long pubKeyID = CryptoDAO.insertKeyInDB(intermediatePubKStream, "USER_" + certName + "_public", "Inherited", hc.getStringChecksum(intermediatePubKStream2, HashCalculator.SHA256), (int) (long) privKeyID, false, "");
                 InputStream certStream = StreamManager.convertCertificateToInputStream(cert);
                 InputStream certStream2 = StreamManager.convertCertificateToInputStream(cert);
                 String thumbPrint = hc.getThumbprint(cert.getEncoded());

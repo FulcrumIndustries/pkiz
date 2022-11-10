@@ -31,6 +31,7 @@ C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\c
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\CertificateTableCellRenderer.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\PKIZ.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\com\fulcrumindustries\pkiz\bruteforce\EncryptedMessage.java
+C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\crypto\CertType.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\crypto\x509\X509Detector.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\com\fulcrumindustries\pkiz\bruteforce\PublicKey.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\JTextFieldLimit.java
@@ -39,7 +40,6 @@ C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\c
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\crypto\x509\CRLManager.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\stream\StreamManager.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\database\definition\CryptoDAO.java
-C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\database\definition\CertificateHierarchyManager.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\crypto\x509\DHKeyGeneratorHelper.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\com\fulcrumindustries\pkiz\bruteforce\RSA.java
 C:\Users\phili\OneDrive\Documents\GitHub\pkiz\src\main\java\org\caulfield\pkiz\crypto\x509\reader\PrivateKeyReader.java

@@ -100,6 +100,11 @@
             <version>0.1</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.external</groupId>
+            <artifactId>AbsoluteLayout</artifactId>
+            <version>RELEASE150</version>
+        </dependency>
     </dependencies>
     <build>  
         <resources>

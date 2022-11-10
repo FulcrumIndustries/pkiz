@@ -5,8 +5,11 @@
  */
 package org.caulfield.pkiz.crypto.x509;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -25,26 +28,42 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 import java.util.Random;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.AADProcessor;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.caulfield.pkiz.crypto.CertType;
+import org.caulfield.pkiz.crypto.CryptoGenerator;
+import org.caulfield.pkiz.crypto.hash.HashCalculator;
+import org.caulfield.pkiz.database.definition.CryptoDAO;
+import org.caulfield.pkiz.database.definition.EnigmaCertificate;
+import org.caulfield.pkiz.database.definition.EnigmaKey;
+import org.caulfield.pkiz.stream.StreamManager;
 
 /**
  *
@@ -81,49 +100,264 @@ public class CertificateChainBuilder {
         fileOutputStream.close();
     }
 
-    public static Certificate createCACert(Date expiryDate, String CN, String Org, String OU, String alias, boolean export, boolean genPK, String savePath) {
-        try {
-            System.out.print("WWW");
-            // Create self signed Root CA certificate  
-            KeyPair rootCAKeyPair = null;
-            if (genPK) {
-                rootCAKeyPair = generateKeyPair();
-            } else {
-                // Import a key from DB
+    private static void saveToFile(byte[] data, String filePath) throws IOException, CertificateEncodingException {
+        FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+        fileOutputStream.write(data);
+        fileOutputStream.flush();
+        fileOutputStream.close();
+    }
+
+    private static void saveToFile(InputStream inputStream, String filePath) throws IOException, CertificateEncodingException {
+
+        try ( FileOutputStream outputStream = new FileOutputStream(filePath, false)) {
+            int read;
+            byte[] bytes = new byte[8192];
+            while ((read = inputStream.read(bytes)) != -1) {
+                outputStream.write(bytes, 0, read);
             }
+        }
+    }
+
+    // PRISTINE FUNC
+    public static Certificate createCACert(Date expiryDate, String CN, String Org, String OU, String alias, boolean export, String savePath, String pkPassword) {
+        try {
+            PrivateKey pk = null;
+            PublicKey pubk = null;
+
+            // GENERATE ROOT PRIVATE KEY
+            CryptoGenerator cg = new CryptoGenerator();
+            EnigmaKey ek = cg.buildPrivateKey(pkPassword, 2048, "65537", 8, "RSA", alias + "_private");
+            pk = ek.getPk();
+            // GENERATE ROOT PUBLIC KEY
+            EnigmaKey ekpb = cg.generatePublicKeyFromPrivateKey(pk, pkPassword, ek.getId(), alias + "_public");
+            pubk = ekpb.getPubk();
             X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
             name.addRDN(BCStyle.CN, CN);
             name.addRDN(BCStyle.O, Org);
             name.addRDN(BCStyle.OU, OU);
             X500Name subject = name.build();
+            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
             X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
                     subject, // issuer authority  
-                    BigInteger.valueOf(new Random().nextInt()), //serial number of certificate  
+                    serial, //serial number of certificate  
                     new Date(), // start of validity  
                     expiryDate, //end of certificate validity  
                     subject, // subject name of certificate  
-                    rootCAKeyPair.getPublic()); // public key of certificate  
+                    pubk); // public key of certificate  
             // key usage restrictions  
-            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign));
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+            ASN1EncodableVector purposes = new ASN1EncodableVector();
+            purposes.add(KeyPurposeId.id_kp_serverAuth);
+            purposes.add(KeyPurposeId.id_kp_clientAuth);
+            purposes.add(KeyPurposeId.anyExtendedKeyUsage);
+            builder.addExtension(Extension.extendedKeyUsage, false, new DERSequence(purposes));
             builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(true));
-            JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
-            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(rootCAKeyPair.getPublic());
+            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(pubk);
             builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
-            AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(rootCAKeyPair.getPublic());
+            AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(pubk);
             builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
             X509Certificate rootCA = new JcaX509CertificateConverter().getCertificate(builder
                     .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
-                            build(rootCAKeyPair.getPrivate()))); // private key of signing authority , here it is self signed  
+                            build(pk))); // private key of signing authority , here it is self signed  
+
+            // SAVING TO FILESYSTEM
+            if (export) {
+                JcaPEMWriter pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + ".crt"));
+                pemWrt.writeObject(rootCA);
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_priv.key")); 
+                pemWrt.writeObject(ek.getPemObject());
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_pub.key"));
+                pemWrt.writeObject(ekpb.getPubk());
+                pemWrt.flush();
+                pemWrt.close();
+            }
+
+            // Save the certificate in DB
+            HashCalculator hashc = new HashCalculator();
+            InputStream in = new ByteArrayInputStream(rootCA.getEncoded());
+            String realHashC = hashc.getStringChecksum(in, HashCalculator.SHA256);
+            String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
+            Date CRLstartDate = new Date();
+            in = new ByteArrayInputStream(rootCA.getEncoded());
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) ek.getId(), (int) ekpb.getId(), thumbPrint, 1, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+            System.out.println("org.caulfield.pkiz.crypto.x509.CertificateChainBuilder.createCACert() CERT " + idCert);
+
+            // Generate the associated CRL
+            CRLManager crlm = new CRLManager();
+            Integer cycleId = 30;
+            Date CRLendDate = new Date(CRLstartDate.getTime() + cycleId * CRLManager.DAY_IN_MS);
+            X509CRLHolder crl = crlm.initializeCRL(JcaX500NameUtil.getX500Name(rootCA.getSubjectX500Principal()), pk, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+            InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
+            // Save the CRL in DB
+            CryptoDAO.insertCRLInDB(crlStream, (int) idCert, cycleId, CRLstartDate, CRLendDate);
+            return rootCA;
+
+        } catch (Exception r) {
+            System.out.print(r.toString());
+            System.out.print(r.getMessage());
+        }
+        return null;
+    }
+
+    public static Certificate createIntermediateCert(Date expiryDate, String CN, String Org, String OU, String alias, boolean export, String savePath, String pkPassword, String parentCert) {
+        try {
+            PrivateKey pk = null;
+            PublicKey pubk = null;
+            // Create self signed Root CA certificate  
+
+            // Import a key from DB
+            CryptoGenerator cg = new CryptoGenerator();
+            EnigmaKey en = cg.getPrivateKeyFromParentCombo(parentCert);
+            pk = en.getPk();
+            pubk = cg.buildPublicKeyFromPrivateKey(pk);
+
+            X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
+            name.addRDN(BCStyle.CN, CN);
+            name.addRDN(BCStyle.O, Org);
+            name.addRDN(BCStyle.OU, OU);
+            X500Name subject = name.build();
+            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
+            X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                    subject, // issuer authority  
+                    serial, //serial number of certificate  
+                    new Date(), // start of validity  
+                    expiryDate, //end of certificate validity  
+                    subject, // subject name of certificate  
+                    pubk); // public key of certificate  
+            ASN1EncodableVector purposes = new ASN1EncodableVector();
+            purposes.add(KeyPurposeId.id_kp_serverAuth);
+            purposes.add(KeyPurposeId.id_kp_clientAuth);
+            purposes.add(KeyPurposeId.anyExtendedKeyUsage);
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+            builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(true));
+            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(pubk);
+            builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
+            AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(pubk);
+            builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
+            X509Certificate intermediateCA = new JcaX509CertificateConverter().getCertificate(builder
+                    .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
+                            build(pk))); // private key of signing authority , here it is self signed  
+
+            // SAVING TO FILESYSTEM
+            if (export) {
+                System.out.print(savePath + alias + ".crt");
+                saveToFile(intermediateCA, savePath + alias + ".crt");
+            }
+
+            // SAVING TO DATABASE
+            HashCalculator hashc = new HashCalculator();
+            // Save the private key in DB
+            InputStream pkStream = new ByteArrayInputStream(pk.getEncoded());
+            String realHash = hashc.getStringChecksum(pkStream, HashCalculator.SHA256);
+            long privKid = CryptoDAO.insertKeyInDB(pkStream, alias, "SHA256withRSA", realHash, en.getId(), true, pkPassword);
+            // Save the public key in DB
+            InputStream pubStream = new ByteArrayInputStream(pubk.getEncoded());
+            String realHashB = hashc.getStringChecksum(pubStream, HashCalculator.SHA256);
+            long pubKid = CryptoDAO.insertKeyInDB(pubStream, alias, "SHA256withRSA", realHashB, (int) (long) privKid, false, "");
+            // Save the certificate in DB
+            InputStream in = new ByteArrayInputStream(intermediateCA.getEncoded());
+            String realHashC = hashc.getStringChecksum(in, HashCalculator.SHA256);
+            String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
+            Date CRLstartDate = new Date();
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) privKid, (int) pubKid, thumbPrint, 1, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+
+            // CRL MANAGEMENT
+            String thumbPrintAC = hashc.getThumbprint(intermediateCA.getEncoded());
+            EnigmaCertificate caEnigCert = CryptoDAO.getEnigmaCertFromDB(thumbPrintAC);
+            BigInteger affectedSerial = caEnigCert.getAcserialcursor();
+            CRLManager crlm = new CRLManager();
+            Integer cycleId = 30;
+            Date CRLendDate = new Date(CRLstartDate.getTime() + cycleId * CRLManager.DAY_IN_MS);
+            System.out.println("SERIAL AFFECTED TO SUB CERTIFICATE : " + affectedSerial.intValue());
+            // Generate the associated CRL
+//            X509CRLHolder crl = crlm.initializeCRL(cert, intermediatePK, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+//            InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
+//            // Save the CRL of the sub in DB
+//            CryptoDAO.insertCRLInDB(crlStream, (int) idCert, cycleId, CRLstartDate, CRLendDate);
+//            // Update the parent AC Serial Cursor as we used the affected one
+//            CryptoDAO.updateACSerialCursorAndDate(caEnigCert.getId_cert(), affectedSerial);
+
+            return intermediateCA;
+
+        } catch (Exception r) {
+            System.out.print(r.toString());
+            System.out.print(r.getMessage());
+        }
+        return null;
+    }
+
+    public static Certificate createEndUserCert(Date expiryDate, String CN, String Org, String OU, String alias, boolean export, String savePath, String pkPassword, String parentCert, int usage) {
+        try {
+            PrivateKey pk = null;
+            PublicKey pubk = null;
+            // Create self signed Root CA certificate  
+
+            // Import a key from DB
+            CryptoGenerator cg = new CryptoGenerator();
+            EnigmaKey en = cg.getPrivateKeyFromCombo(parentCert);
+            pk = en.getPk();
+            pubk = cg.buildPublicKeyFromPrivateKey(pk);
+
+            X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
+            name.addRDN(BCStyle.CN, CN);
+            name.addRDN(BCStyle.O, Org);
+            name.addRDN(BCStyle.OU, OU);
+            X500Name subject = name.build();
+            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
+            X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                    subject, // issuer authority  
+                    serial, //serial number of certificate  
+                    new Date(), // start of validity  
+                    expiryDate, //end of certificate validity  
+                    subject, // subject name of certificate  
+                    pubk); // public key of certificate  
+            if (usage == CertType.ENDUSER_SERVER) {
+                builder.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(new KeyPurposeId[]{KeyPurposeId.id_kp_serverAuth}));
+                builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.nonRepudiation | KeyUsage.keyAgreement));
+            } else if (usage == CertType.ENDUSER_CLIENT) {
+                builder.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(new KeyPurposeId[]{KeyPurposeId.id_kp_clientAuth}));
+                builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.dataEncipherment | KeyUsage.keyAgreement));
+            } else if (usage == CertType.ENDUSER_MULTI) {
+                builder.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(new KeyPurposeId[]{KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth}));
+                builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment | KeyUsage.dataEncipherment | KeyUsage.keyAgreement | KeyUsage.nonRepudiation));
+            }
+            builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(true));
+            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(pubk);
+            builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
+            AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(pubk);
+            builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
+            X509Certificate rootCA = new JcaX509CertificateConverter().getCertificate(builder
+                    .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
+                            build(pk))); // private key of signing authority , here it is self signed  
+
+            // SAVING TO FILESYSTEM
             if (export) {
                 System.out.print(savePath + alias + ".crt");
                 saveToFile(rootCA, savePath + alias + ".crt");
             }
-            // Save everything to DB
-            // PK 
-            // PUb KEY
-            // CERT
-            //int certID = CryptoDAO.insertCertInDB(certStream, alias, CN, hc.getStringChecksum(certStream2, HashCalculator.SHA256), algo, (int) (long) privKeyID, thumbPrint, idParentCert, 2, cert.getNotAfter(), affectedSerial, BigInteger.ONE, CRLstartDate);
+
+            // SAVING TO DATABASE
+            HashCalculator hashc = new HashCalculator();
+            // Save the private key in DB
+            InputStream pkStream = new ByteArrayInputStream(pk.getEncoded());
+            String realHash = hashc.getStringChecksum(pkStream, HashCalculator.SHA256);
+            long privKid = CryptoDAO.insertKeyInDB(pkStream, alias, "SHA256withRSA", realHash, 0, true, pkPassword);
+            // Save the public key in DB
+            InputStream pubStream = new ByteArrayInputStream(pubk.getEncoded());
+            String realHashB = hashc.getStringChecksum(pubStream, HashCalculator.SHA256);
+            long pubKid = CryptoDAO.insertKeyInDB(pubStream, alias, "SHA256withRSA", realHashB, (int) (long) privKid, false, "");
+            // Save the certificate in DB
+            InputStream in = new ByteArrayInputStream(rootCA.getEncoded());
+            String realHashC = hashc.getStringChecksum(in, HashCalculator.SHA256);
+            String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) privKid, (int) pubKid, thumbPrint, 1, expiryDate, serial, BigInteger.ONE, new Date());
+
             return rootCA;
+
         } catch (Exception r) {
             System.out.print(r.toString());
             System.out.print(r.getMessage());

@@ -135,25 +135,5 @@ public class HSQLLoader {
         System.out.println("Build successful !");
 
     }
-//
-//    private static void runScript(String scriptPath, Connection conn, String password)
-//            throws org.hsqldb.cmdline.SqlTool.SqlToolException, IOException, SQLException {
-//        String urlId = "whatever";
-//
-//        File tempRcFile = File.createTempFile("tempRc", ".rc");
-//        tempRcFile.deleteOnExit();
-//        PrintWriter pw = new PrintWriter(tempRcFile);
-//        pw.printf("urlid %s%n", urlId);
-//        pw.printf("url %s%n", conn.getMetaData().getURL());
-//        pw.printf("username %s%n", conn.getMetaData().getUserName());
-//        pw.printf("password %s%n", password);
-//        pw.close();
-//
-//        String[] args = new String[4];
-//        args[0] = "--autoCommit";
-//        args[1] = String.format("--rcFile=%s", tempRcFile.getAbsolutePath());
-//        args[2] = urlId;
-//        args[3] = scriptPath;
-//        org.hsqldb.cmdline.SqlTool.objectMain(args);
-//    }
+
 }

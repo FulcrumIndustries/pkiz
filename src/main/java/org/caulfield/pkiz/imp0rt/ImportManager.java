@@ -32,7 +32,7 @@ public class ImportManager {
             HashCalculator hashc = new HashCalculator();
             String realHash = hashc.getStringChecksum(cert, HashCalculator.SHA256);
             String thumbPrint = hashc.getThumbprint(certX);
-            String CN = certX.getSubjectDN().getName();
+            String CN = certX.getSubjectX500Principal().getName();
             String certName = CN.replace("CN=", "");
             if (CN.contains(",")) {
                 certName = certName.substring(0, certName.indexOf(","));
