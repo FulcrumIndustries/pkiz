@@ -19,6 +19,34 @@ import javax.swing.tree.TreeNode;
  */
 public class EnigmaCertificate implements TreeNode, Comparable {
 
+    /**
+     * @return the privateKey
+     */
+    public EnigmaKey getPrivateKey() {
+        return privateKey;
+    }
+
+    /**
+     * @param privateKey the privateKey to set
+     */
+    public void setPrivateKey(EnigmaKey privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    /**
+     * @return the publicKey
+     */
+    public EnigmaKey getPublicKey() {
+        return publicKey;
+    }
+
+    /**
+     * @param publicKey the publicKey to set
+     */
+    public void setPublicKey(EnigmaKey publicKey) {
+        this.publicKey = publicKey;
+    }
+
     //CREATE TABLE CERTIFICATES (ID_CERT INTEGER PRIMARY KEY, CERTNAME VARCHAR(200),CN VARCHAR(200),ALGO VARCHAR(64),CERTFILE BLOB,SHA256  VARCHAR(256),THUMBPRINT  VARCHAR(256),ID_ISSUER_CERT INTEGER, ID_PRIVATEKEY INTEGER);
     private Integer id_cert;
     private String certname;
@@ -37,6 +65,8 @@ public class EnigmaCertificate implements TreeNode, Comparable {
     private BigInteger acserialcursor;
     private Date lastcrlupdate;
     private String status;
+    private EnigmaKey privateKey;
+    private EnigmaKey publicKey;
 
     public EnigmaCertificate() {
         childs = new ArrayList<>();

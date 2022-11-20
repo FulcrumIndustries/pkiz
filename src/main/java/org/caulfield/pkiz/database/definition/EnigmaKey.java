@@ -16,7 +16,8 @@ import org.bouncycastle.util.io.pem.PemObject;
  */
 public class EnigmaKey {
     //CREATE TABLE X509KEYS (ID_KEY INTEGER PRIMARY KEY,	KEYNAME VARCHAR(200), KEYTYPE INTEGER,KEYFILE BLOB, ALGO VARCHAR(64), SHA256  VARCHAR(256),ID_ASSOCIATED_KEY INTEGER, PASSWORD  VARCHAR(64));
-private int id;
+
+    private int id;
     private PrivateKey pk;
     private PublicKey pubk;
     private String password;
@@ -191,7 +192,5 @@ private int id;
     public void setPemObject(PemObject pemObject) {
         this.pemObject = pemObject;
     }
-
-
 
 }

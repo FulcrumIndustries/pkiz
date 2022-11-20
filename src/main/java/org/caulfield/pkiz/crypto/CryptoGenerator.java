@@ -66,7 +66,11 @@ import javax.crypto.spec.DHParameterSpec;
 
 import javax.security.auth.x500.X500Principal;
 import jakarta.xml.bind.DatatypeConverter;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 
@@ -363,17 +367,14 @@ public class CryptoGenerator {
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-// Fake code simulating the copy
-// You can generally do better with nio if you need...
-// And please, unlike me, do something about the Exceptions :D
+
             byte[] buffer = new byte[1024];
             int len;
             while ((len = is.read(buffer)) > -1) {
                 baos.write(buffer, 0, len);
             }
             baos.flush();
-// Open new InputStreams using the recorded bytes
-// Can be repeated as many times as you wish
+
             InputStream is1 = new ByteArrayInputStream(baos.toByteArray());
             InputStream is2 = new ByteArrayInputStream(baos.toByteArray());
             InputStream is3 = new ByteArrayInputStream(baos.toByteArray());
@@ -985,6 +986,22 @@ public class CryptoGenerator {
         }
         return inputStream;
     }
+
+    private InputStream writePrivateKey(PrivateKey myPrivateKey) {
+        InputStream inputStream = null;
+        try {
+            StringWriter sw = new StringWriter();
+            PemWriter publicPemWriterx = new PemWriter(new BufferedWriter(sw));
+            publicPemWriterx.writeObject(new PemObject("PRIVATE KEY", myPrivateKey.getEncoded()));
+            publicPemWriterx.flush();
+            publicPemWriterx.close();
+            inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException ex) {
+            Logger.getLogger(CryptoGenerator.class
+                    .getName()).log(Level.SEVERE, null, ex);
+        }
+        return inputStream;
+    }
 //That means if you take your second X.509 public key, and separate the first 32 characters:
 //
 //-----BEGIN PUBLIC KEY-----
@@ -1511,25 +1528,26 @@ public class CryptoGenerator {
 
             //  final File privateKeyFile = new File(directory + fileOutName);
             StringWriter sw = new StringWriter();
-            final JcaPEMWriter privatePemWriter = new JcaPEMWriter(sw);
+            final JcaPEMWriter privatePemWriter = new JcaPEMWriter(new BufferedWriter(sw));
 
             if (privateKeyPassword != null && !"".equals(privateKeyPassword)) {
                 hasPassword = true;
             }
-            PemObject obj =null;
+            PemObject obj = null;
             if (hasPassword) {
                 JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(PKCS8Generator.PBE_SHA1_3DES);
                 encryptorBuilder.setRandom(new SecureRandom());
                 encryptorBuilder.setPassword(privateKeyPassword.toCharArray());
                 OutputEncryptor oe = encryptorBuilder.build();
                 JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, oe);
-                 obj = gen.generate();
+                obj = gen.generate();
                 privatePemWriter.writeObject(obj);
+                //new PemObject("PUBLIC KEY", myPublicKey.getEncoded())
             } else {
                 //  privatePemWriter.writeObject(privkey);
 
                 JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, null);
-                 obj = gen.generate();
+                obj = gen.generate();
                 privatePemWriter.writeObject(obj);
             }
 
@@ -1538,11 +1556,21 @@ public class CryptoGenerator {
 
             // Calculate SHA256
             HashCalculator hashc = new HashCalculator();
-            System.out.println("PK PARTY " + sw.toString());
-            InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes());
+            /*System.out.println("PK PARTY " + sw.toString());
+            Charset charset = Charset.forName("UTF-8");
+            CharsetEncoder encoder = charset.newEncoder();
+            CharBuffer buffer = CharBuffer.wrap(sw.getBuffer());
+            byte[] bytesStringWriter = encoder.encode(buffer).array();
+*/
+            // InputStream inputStream = new ByteArrayInputStream(bytesStringWriter);
+            InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
+           // System.out.println("XXXXXXXXXXX ! " + IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+            //InputStream inputStream = IOUtils.toInputStream(sw.toString(), "UTF-8");
+            //InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes("UTF8"));
             byte[] hash = hashc.checksum(inputStream, HashCalculator.SHA256);
             String realHash = DatatypeConverter.printHexBinary(hash);
             // Write in Database
+               inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
             long pkID = CryptoDAO.insertKeyInDB(inputStream, keyname, algo, realHash, 0, true, privateKeyPassword);
             ek.setKeyStream(inputStream);
             ek.setId((int) pkID);
@@ -1603,15 +1631,14 @@ public class CryptoGenerator {
         return null;
     }
 
-    public EnigmaKey getPrivateKeyFromParentCombo(String comboText) {
+    public EnigmaCertificate getPrivateKeyFromParentCombo(String comboText) {
         Integer certID = getKeyIDFromParentComboBox(comboText);
-        PrivateKey privateKey = null;
         try {
             EnigmaCertificate stCert = CryptoDAO.getEnigmaCertFromDB(certID, null);
-            InputStream stPrivKey = CryptoDAO.getKeyFromDB(stCert.getId_private_key());
             EnigmaKey en = CryptoDAO.getEnigmaKeyFromDB(stCert.getId_private_key());
             en.setPk(getPrivateKey(en.getKeyStream(), en.getPassword()));
-            return en;
+            stCert.setPrivateKey(en);
+            return stCert;
         } catch (EnigmaException ex) {
             Logger.getLogger(CryptoGenerator.class
                     .getName()).log(Level.SEVERE, null, ex);

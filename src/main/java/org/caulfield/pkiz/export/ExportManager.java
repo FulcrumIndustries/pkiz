@@ -87,13 +87,16 @@ public class ExportManager {
             byte[] buffer = new byte[is.available()];
             is.read(buffer);
             String pemFormated = new String(buffer);
-            String base64 = pemFormated.replaceAll("\\s", "");
-            base64 = base64.replace("-----BEGINCERTIFICATE-----", "");
-            base64 = base64.replace("-----ENDCERTIFICATE-----", "");
-            byte[] derformated = Base64.decode(base64.getBytes());
+            if (pemFormated.contains("CERTIFICATE")) {
+
+                String base64 = pemFormated.replaceAll("\\s", "");
+                base64 = base64.replace("-----BEGINCERTIFICATE-----", "");
+                base64 = base64.replace("-----ENDCERTIFICATE-----", "");
+                buffer = Base64.decode(base64.getBytes());
+            }
             File targetFile = new File(outputFileName);
             OutputStream outStream = new FileOutputStream(targetFile);
-            outStream.write(derformated);
+            outStream.write(buffer);
             outStream.flush();
             outStream.close();
             return "Certificate exported successfully as DER " + targetFile;

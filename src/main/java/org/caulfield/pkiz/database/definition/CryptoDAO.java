@@ -8,8 +8,11 @@ package org.caulfield.pkiz.database.definition;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +20,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.io.IOUtils;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
+import org.hsqldb.util.DatabaseManagerSwing;
+import org.openide.util.Exceptions;
 
 /**
  *
@@ -36,7 +42,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("KEYFILE");
             }
-            //System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -112,6 +118,10 @@ public class CryptoDAO {
                 in.setId_associated_key(cert.getInt("ID_ASSOCIATED_KEY"));
                 in.setPassword(cert.getString("PASSWORD"));
             }
+            /* DatabaseManagerSwing manager = new DatabaseManagerSwing();
+            manager.main();
+            manager.connect(sql.getConnection());
+            manager.start();*/
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
 
@@ -150,7 +160,7 @@ public class CryptoDAO {
             while (childs.next()) {
                 in.getChilds().add(getEnigmaCertFromDB(childs.getInt("ID_CERT"), in));
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -168,7 +178,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("CRLFILE");
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLwithidCACertFromDB()" + in.toString());
+            //      System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLwithidCACertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -186,7 +196,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("CRLFILE");
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -209,7 +219,7 @@ public class CryptoDAO {
                 crl.setEnddate(ff.getDate("ENDDATE"));
                 enigmaCRLList.add(crl);
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLforCertFromDB()");
+            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLforCertFromDB()");
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -221,13 +231,13 @@ public class CryptoDAO {
     public static InputStream getCertFromDB(Integer idCert) {
         InputStream in = null;
         try {
-           System.out.println("SELECT CERTFILE FROM CERTIFICATES WHERE ID_CERT=" + idCert);
+            System.out.println("SELECT CERTFILE FROM CERTIFICATES WHERE ID_CERT=" + idCert);
             ResultSet ff = sql.runQuery("SELECT CERTFILE FROM CERTIFICATES WHERE ID_CERT=" + idCert);
 
             if (ff.next()) {
                 in = ff.getBinaryStream("CERTFILE");
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
+            //   System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -268,7 +278,7 @@ public class CryptoDAO {
         }
     }
 
-    public static long insertCertInDB(InputStream inputStream, String certName, String CN, String realHash, String algo, int privKid, int pubKid, String thumbPrint, int certType, Date expiryDate, BigInteger serial, BigInteger acSerialCursor, Date lastCRLUpdate) {
+    public static long insertCertInDB(InputStream inputStream, String certName, String CN, String realHash, String algo, int privKid, int pubKid, String thumbPrint, int issuerCertID, int certType, Date expiryDate, BigInteger serial, BigInteger acSerialCursor, Date lastCRLUpdate) {
         try {
 
             PreparedStatement pst = sql.getConnection().prepareStatement("INSERT INTO CERTIFICATES (ID_CERT,CERTNAME,CN,ALGO,CERTFILE,SHA256,THUMBPRINT,ID_ISSUER_CERT,ID_PRIVATEKEY,ID_PUBLICKEY,CERTTYPE,EXPIRYDATE,SERIAL,ACSERIALCURSOR,CRLLASTUPDATE,STATUS) VALUES (NEXT VALUE FOR CERTIFICATES_SEQ,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'ACTIVE')", new String[]{"ID_CERT"});
@@ -278,7 +288,7 @@ public class CryptoDAO {
             pst.setBinaryStream(4, inputStream);
             pst.setString(5, realHash);
             pst.setString(6, thumbPrint);
-            pst.setInt(7, 0);
+            pst.setInt(7, issuerCertID);
             pst.setInt(8, privKid);
             pst.setInt(9, pubKid);
             pst.setInt(10, certType);
@@ -487,7 +497,7 @@ public class CryptoDAO {
                 crl.setStartdate(ff.getDate("STARTDATE"));
                 crl.setEnddate(ff.getDate("ENDDATE"));
             }
-            System.out.println("org.caulfield.enigma.database.CryptoDAO.getEnigmaCRLwithidCACertFromDB()");
+            //   System.out.println("org.caulfield.enigma.database.CryptoDAO.getEnigmaCRLwithidCACertFromDB()");
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);

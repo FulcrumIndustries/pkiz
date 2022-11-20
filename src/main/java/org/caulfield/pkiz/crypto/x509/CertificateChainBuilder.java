@@ -166,7 +166,7 @@ public class CertificateChainBuilder {
                 pemWrt.writeObject(rootCA);
                 pemWrt.flush();
                 pemWrt.close();
-                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_priv.key")); 
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_priv.key"));
                 pemWrt.writeObject(ek.getPemObject());
                 pemWrt.flush();
                 pemWrt.close();
@@ -183,8 +183,8 @@ public class CertificateChainBuilder {
             String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
             Date CRLstartDate = new Date();
             in = new ByteArrayInputStream(rootCA.getEncoded());
-            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) ek.getId(), (int) ekpb.getId(), thumbPrint, 1, expiryDate, serial, BigInteger.ONE, CRLstartDate);
-            System.out.println("org.caulfield.pkiz.crypto.x509.CertificateChainBuilder.createCACert() CERT " + idCert);
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) ek.getId(), (int) ekpb.getId(), thumbPrint,0, 1, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+          //  System.out.println("org.caulfield.pkiz.crypto.x509.CertificateChainBuilder.createCACert() CERT " + idCert);
 
             // Generate the associated CRL
             CRLManager crlm = new CRLManager();
@@ -207,13 +207,19 @@ public class CertificateChainBuilder {
         try {
             PrivateKey pk = null;
             PublicKey pubk = null;
-            // Create self signed Root CA certificate  
+            PrivateKey parentPk = null;
 
-            // Import a key from DB
+            // GENERATE ROOT PRIVATE KEY
             CryptoGenerator cg = new CryptoGenerator();
-            EnigmaKey en = cg.getPrivateKeyFromParentCombo(parentCert);
-            pk = en.getPk();
-            pubk = cg.buildPublicKeyFromPrivateKey(pk);
+            EnigmaKey ek = cg.buildPrivateKey(pkPassword, 2048, "65537", 8, "RSA", alias + "_private");
+            pk = ek.getPk();
+            // GENERATE ROOT PUBLIC KEY
+            EnigmaKey ekpb = cg.generatePublicKeyFromPrivateKey(pk, pkPassword, ek.getId(), alias + "_public");
+            pubk = ekpb.getPubk();
+
+            // PARENT PK FROM DB
+            EnigmaCertificate caCert  = cg.getPrivateKeyFromParentCombo(parentCert);
+            parentPk = caCert.getPrivateKey().getPk();
 
             X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
             name.addRDN(BCStyle.CN, CN);
@@ -240,47 +246,45 @@ public class CertificateChainBuilder {
             builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
             X509Certificate intermediateCA = new JcaX509CertificateConverter().getCertificate(builder
                     .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
-                            build(pk))); // private key of signing authority , here it is self signed  
+                            build(parentPk))); // private key of signing authority , here it is self signed  
 
             // SAVING TO FILESYSTEM
             if (export) {
-                System.out.print(savePath + alias + ".crt");
-                saveToFile(intermediateCA, savePath + alias + ".crt");
+                JcaPEMWriter pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + ".crt"));
+                pemWrt.writeObject(intermediateCA);
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_priv.key"));
+                pemWrt.writeObject(ek.getPemObject());
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_pub.key"));
+                pemWrt.writeObject(ekpb.getPubk());
+                pemWrt.flush();
+                pemWrt.close();
             }
 
-            // SAVING TO DATABASE
-            HashCalculator hashc = new HashCalculator();
-            // Save the private key in DB
-            InputStream pkStream = new ByteArrayInputStream(pk.getEncoded());
-            String realHash = hashc.getStringChecksum(pkStream, HashCalculator.SHA256);
-            long privKid = CryptoDAO.insertKeyInDB(pkStream, alias, "SHA256withRSA", realHash, en.getId(), true, pkPassword);
-            // Save the public key in DB
-            InputStream pubStream = new ByteArrayInputStream(pubk.getEncoded());
-            String realHashB = hashc.getStringChecksum(pubStream, HashCalculator.SHA256);
-            long pubKid = CryptoDAO.insertKeyInDB(pubStream, alias, "SHA256withRSA", realHashB, (int) (long) privKid, false, "");
             // Save the certificate in DB
+            HashCalculator hashc = new HashCalculator();
             InputStream in = new ByteArrayInputStream(intermediateCA.getEncoded());
             String realHashC = hashc.getStringChecksum(in, HashCalculator.SHA256);
             String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
             Date CRLstartDate = new Date();
-            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) privKid, (int) pubKid, thumbPrint, 1, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+            in = new ByteArrayInputStream(intermediateCA.getEncoded());
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) ek.getId(), (int) ekpb.getId(), thumbPrint,caCert.getId_cert(), 2, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+          //  System.out.println("org.caulfield.pkiz.crypto.x509.CertificateChainBuilder.createCACert() CERT " + idCert);
 
-            // CRL MANAGEMENT
-            String thumbPrintAC = hashc.getThumbprint(intermediateCA.getEncoded());
-            EnigmaCertificate caEnigCert = CryptoDAO.getEnigmaCertFromDB(thumbPrintAC);
-            BigInteger affectedSerial = caEnigCert.getAcserialcursor();
+            // Generate the associated CRL
+            BigInteger affectedSerial = caCert.getAcserialcursor();
             CRLManager crlm = new CRLManager();
             Integer cycleId = 30;
             Date CRLendDate = new Date(CRLstartDate.getTime() + cycleId * CRLManager.DAY_IN_MS);
-            System.out.println("SERIAL AFFECTED TO SUB CERTIFICATE : " + affectedSerial.intValue());
-            // Generate the associated CRL
-//            X509CRLHolder crl = crlm.initializeCRL(cert, intermediatePK, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
-//            InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
-//            // Save the CRL of the sub in DB
-//            CryptoDAO.insertCRLInDB(crlStream, (int) idCert, cycleId, CRLstartDate, CRLendDate);
-//            // Update the parent AC Serial Cursor as we used the affected one
-//            CryptoDAO.updateACSerialCursorAndDate(caEnigCert.getId_cert(), affectedSerial);
-
+            X509CRLHolder crl = crlm.initializeCRL(JcaX500NameUtil.getX500Name(intermediateCA.getSubjectX500Principal()), parentPk, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+            InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
+            // Save the CRL in DB
+            CryptoDAO.insertCRLInDB(crlStream, (int) caCert.getId_cert(), cycleId, CRLstartDate, CRLendDate);
+            // Update the parent AC Serial Cursor as we used the affected one
+            CryptoDAO.updateACSerialCursorAndDate(caCert.getId_cert(), affectedSerial);
             return intermediateCA;
 
         } catch (Exception r) {
@@ -294,13 +298,19 @@ public class CertificateChainBuilder {
         try {
             PrivateKey pk = null;
             PublicKey pubk = null;
-            // Create self signed Root CA certificate  
+            PrivateKey parentPk = null;
 
-            // Import a key from DB
+            // GENERATE ROOT PRIVATE KEY
             CryptoGenerator cg = new CryptoGenerator();
-            EnigmaKey en = cg.getPrivateKeyFromCombo(parentCert);
-            pk = en.getPk();
-            pubk = cg.buildPublicKeyFromPrivateKey(pk);
+            EnigmaKey ek = cg.buildPrivateKey(pkPassword, 2048, "65537", 8, "RSA", alias + "_private");
+            pk = ek.getPk();
+            // GENERATE ROOT PUBLIC KEY
+            EnigmaKey ekpb = cg.generatePublicKeyFromPrivateKey(pk, pkPassword, ek.getId(), alias + "_public");
+            pubk = ekpb.getPubk();
+
+            // PARENT PK FROM DB
+            EnigmaCertificate caCert  = cg.getPrivateKeyFromParentCombo(parentCert);
+            parentPk = caCert.getPrivateKey().getPk();
 
             X500NameBuilder name = new X500NameBuilder(BCStyle.INSTANCE);
             name.addRDN(BCStyle.CN, CN);
@@ -330,34 +340,48 @@ public class CertificateChainBuilder {
             builder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
             AuthorityKeyIdentifier authorityKeyIdentifier = new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(pubk);
             builder.addExtension(Extension.authorityKeyIdentifier, false, authorityKeyIdentifier);
-            X509Certificate rootCA = new JcaX509CertificateConverter().getCertificate(builder
+            X509Certificate userCert = new JcaX509CertificateConverter().getCertificate(builder
                     .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider("BC").
                             build(pk))); // private key of signing authority , here it is self signed  
 
-            // SAVING TO FILESYSTEM
+             // SAVING TO FILESYSTEM
             if (export) {
-                System.out.print(savePath + alias + ".crt");
-                saveToFile(rootCA, savePath + alias + ".crt");
+                JcaPEMWriter pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + ".crt"));
+                pemWrt.writeObject(userCert);
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_priv.key"));
+                pemWrt.writeObject(ek.getPemObject());
+                pemWrt.flush();
+                pemWrt.close();
+                pemWrt = new JcaPEMWriter(new FileWriter(savePath + alias + "_pub.key"));
+                pemWrt.writeObject(ekpb.getPubk());
+                pemWrt.flush();
+                pemWrt.close();
             }
 
-            // SAVING TO DATABASE
-            HashCalculator hashc = new HashCalculator();
-            // Save the private key in DB
-            InputStream pkStream = new ByteArrayInputStream(pk.getEncoded());
-            String realHash = hashc.getStringChecksum(pkStream, HashCalculator.SHA256);
-            long privKid = CryptoDAO.insertKeyInDB(pkStream, alias, "SHA256withRSA", realHash, 0, true, pkPassword);
-            // Save the public key in DB
-            InputStream pubStream = new ByteArrayInputStream(pubk.getEncoded());
-            String realHashB = hashc.getStringChecksum(pubStream, HashCalculator.SHA256);
-            long pubKid = CryptoDAO.insertKeyInDB(pubStream, alias, "SHA256withRSA", realHashB, (int) (long) privKid, false, "");
             // Save the certificate in DB
-            InputStream in = new ByteArrayInputStream(rootCA.getEncoded());
+            HashCalculator hashc = new HashCalculator();
+            InputStream in = new ByteArrayInputStream(userCert.getEncoded());
             String realHashC = hashc.getStringChecksum(in, HashCalculator.SHA256);
             String thumbPrint = hashc.getThumbprint(pubk.getEncoded());
-            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) privKid, (int) pubKid, thumbPrint, 1, expiryDate, serial, BigInteger.ONE, new Date());
+            Date CRLstartDate = new Date();
+            in = new ByteArrayInputStream(userCert.getEncoded());
+            long idCert = CryptoDAO.insertCertInDB(in, alias, subject.toString(), realHashC, "SHA256withRSA", (int) ek.getId(), (int) ekpb.getId(), thumbPrint,caCert.getId_cert(), 3, expiryDate, serial, BigInteger.ONE, CRLstartDate);
+          //  System.out.println("org.caulfield.pkiz.crypto.x509.CertificateChainBuilder.createCACert() CERT " + idCert);
 
-            return rootCA;
-
+            // Generate the associated CRL
+            BigInteger affectedSerial = caCert.getAcserialcursor();
+            CRLManager crlm = new CRLManager();
+            Integer cycleId = 30;
+            Date CRLendDate = new Date(CRLstartDate.getTime() + cycleId * CRLManager.DAY_IN_MS);
+            X509CRLHolder crl = crlm.initializeCRL(JcaX500NameUtil.getX500Name(userCert.getSubjectX500Principal()), parentPk, "SHA512withRSA", cycleId, CRLstartDate, CRLendDate);
+            InputStream crlStream = StreamManager.convertCRLToInputStream(crl);
+            // Save the CRL in DB
+            CryptoDAO.insertCRLInDB(crlStream, (int) caCert.getId_cert(), cycleId, CRLstartDate, CRLendDate);
+            // Update the parent AC Serial Cursor as we used the affected one
+            CryptoDAO.updateACSerialCursorAndDate(caCert.getId_cert(), affectedSerial);
+            return userCert;
         } catch (Exception r) {
             System.out.print(r.toString());
             System.out.print(r.getMessage());
