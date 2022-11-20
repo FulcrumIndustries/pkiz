@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.IOUtils;
@@ -127,6 +128,21 @@ public class CryptoDAO {
 
         }
         return in;
+    }
+
+    public static List<Integer> getAllKeysID() {
+        List<Integer> listIDs = new ArrayList<Integer>();
+        try {
+            ResultSet keys = sql.runQuery("SELECT * FROM X509KEYS");
+            //CREATE TABLE CERTIFICATES (ID_CERT INTEGER PRIMARY KEY, CERTNAME VARCHAR(200),CN VARCHAR(200),ALGO VARCHAR(64),CERTFILE BLOB,SHA256  VARCHAR(256),THUMBPRINT  VARCHAR(256),ID_ISSUER_CERT INTEGER, ID_PRIVATEKEY INTEGER);
+            if (keys.next()) {
+                listIDs.add(keys.getInt("ID_KEY"));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
+
+        }
+        return listIDs;
     }
 
     // A lancer sur tous les ROOT CERTS => créé l'arbre en dessous

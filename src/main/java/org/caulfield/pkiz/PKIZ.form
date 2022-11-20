@@ -302,9 +302,6 @@
               </Border>
             </Property>
           </Properties>
-          <AccessibilityProperties>
-            <Property name="AccessibleContext.accessibleName" type="java.lang.String" value="Certificate Properties"/>
-          </AccessibilityProperties>
 
           <Layout>
             <DimensionLayout dim="0">
@@ -553,9 +550,6 @@
                   <Border info="org.netbeans.modules.form.compat2.border.EtchedBorderInfo">
                     <EtchetBorder/>
                   </Border>
-                </Property>
-                <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-                  <Dimension value="[150, 26]"/>
                 </Property>
                 <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                   <Dimension value="[120, 26]"/>
@@ -3402,12 +3396,8 @@
                           <Group type="102" attributes="0">
                               <EmptySpace max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Group type="102" alignment="0" attributes="0">
-                                      <Component id="jLabel34" min="-2" pref="114" max="-2" attributes="0"/>
-                                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                      <Component id="jTextFieldP10PkPw" min="-2" pref="146" max="-2" attributes="0"/>
-                                  </Group>
-                                  <Group type="102" alignment="0" attributes="0">
+                                  <Component id="jLabel34" min="-2" pref="128" max="-2" attributes="0"/>
+                                  <Group type="102" attributes="0">
                                       <Group type="103" groupAlignment="0" attributes="0">
                                           <Component id="jLabel36" alignment="0" min="-2" max="-2" attributes="0"/>
                                           <Component id="jLabel32" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -3419,7 +3409,10 @@
                                           </Group>
                                           <Group type="102" alignment="1" attributes="0">
                                               <EmptySpace max="-2" attributes="0"/>
-                                              <Component id="jComboBoxCSRPk" min="-2" pref="146" max="-2" attributes="0"/>
+                                              <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                                                  <Component id="jTextFieldP10PkPw" max="32767" attributes="0"/>
+                                                  <Component id="jComboBoxCSRPk" pref="146" max="32767" attributes="0"/>
+                                              </Group>
                                           </Group>
                                       </Group>
                                       <EmptySpace max="-2" attributes="0"/>
@@ -3441,7 +3434,7 @@
                                       <Component id="jTextFieldP10TargetFilename" min="-2" pref="150" max="-2" attributes="0"/>
                                   </Group>
                               </Group>
-                              <EmptySpace max="32767" attributes="0"/>
+                              <EmptySpace pref="324" max="32767" attributes="0"/>
                               <Component id="jButtonCSRGenerate" min="-2" pref="246" max="-2" attributes="0"/>
                               <EmptySpace min="-2" pref="14" max="-2" attributes="0"/>
                           </Group>
@@ -4122,14 +4115,17 @@
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="jLabel45" min="-2" max="-2" attributes="0"/>
                                           <EmptySpace min="-2" pref="78" max="-2" attributes="0"/>
-                                          <Component id="jTextFieldSignFile1" min="-2" pref="150" max="-2" attributes="0"/>
+                                          <Component id="jTextFieldDecryptFile" min="-2" pref="150" max="-2" attributes="0"/>
                                           <EmptySpace min="-2" pref="8" max="-2" attributes="0"/>
-                                          <Component id="jButtonBrowseSignFile1" min="-2" pref="95" max="-2" attributes="0"/>
+                                          <Component id="jButtonBrowseEncrypt" min="-2" pref="95" max="-2" attributes="0"/>
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="jLabel73" min="-2" pref="126" max="-2" attributes="0"/>
                                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                          <Component id="jComboBoxSignPK1" min="-2" pref="253" max="-2" attributes="0"/>
+                                          <Group type="103" groupAlignment="0" attributes="0">
+                                              <Component id="jCheckBoxCustomDecryptTryAll" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jComboBoxDecryptPK" min="-2" pref="253" max="-2" attributes="0"/>
+                                          </Group>
                                       </Group>
                                   </Group>
                                   <EmptySpace pref="100" max="32767" attributes="0"/>
@@ -4144,7 +4140,7 @@
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="jLabel74" min="-2" max="-2" attributes="0"/>
                                           <EmptySpace type="separate" max="-2" attributes="0"/>
-                                          <Component id="jTextFieldSignPkPassword1" min="-2" pref="150" max="-2" attributes="0"/>
+                                          <Component id="jTextFieldDecryptPW" min="-2" pref="150" max="-2" attributes="0"/>
                                       </Group>
                                   </Group>
                                   <EmptySpace min="-2" pref="258" max="-2" attributes="0"/>
@@ -4161,8 +4157,8 @@
                                       <Group type="102" attributes="0">
                                           <Group type="103" groupAlignment="3" attributes="0">
                                               <Component id="jLabel45" alignment="3" min="-2" max="-2" attributes="0"/>
-                                              <Component id="jTextFieldSignFile1" alignment="3" min="-2" max="-2" attributes="0"/>
-                                              <Component id="jButtonBrowseSignFile1" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jTextFieldDecryptFile" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jButtonBrowseEncrypt" alignment="3" min="-2" max="-2" attributes="0"/>
                                               <Component id="jLabel75" alignment="3" min="-2" max="-2" attributes="0"/>
                                               <Component id="jTextFieldDecryptOutputFilename" alignment="3" min="-2" max="-2" attributes="0"/>
                                               <Component id="jCheckBoxCustomDecrypt" alignment="3" min="-2" max="-2" attributes="0"/>
@@ -4170,14 +4166,16 @@
                                           <EmptySpace type="separate" max="-2" attributes="0"/>
                                           <Group type="103" groupAlignment="3" attributes="0">
                                               <Component id="jLabel73" alignment="3" min="-2" max="-2" attributes="0"/>
-                                              <Component id="jComboBoxSignPK1" alignment="3" min="-2" pref="20" max="-2" attributes="0"/>
+                                              <Component id="jComboBoxDecryptPK" alignment="3" min="-2" pref="20" max="-2" attributes="0"/>
                                               <Component id="jLabel74" alignment="3" min="-2" max="-2" attributes="0"/>
-                                              <Component id="jTextFieldSignPkPassword1" alignment="3" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jTextFieldDecryptPW" alignment="3" min="-2" max="-2" attributes="0"/>
                                           </Group>
                                       </Group>
                                       <Component id="jButtonDecrypt" min="-2" pref="54" max="-2" attributes="0"/>
                                   </Group>
-                                  <EmptySpace min="-2" pref="48" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jCheckBoxCustomDecryptTryAll" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" pref="22" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                         </DimensionLayout>
@@ -4188,18 +4186,14 @@
                             <Property name="text" type="java.lang.String" value="Target File :"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JTextField" name="jTextFieldSignFile1">
-                          <Events>
-                            <EventHandler event="inputMethodTextChanged" listener="java.awt.event.InputMethodListener" parameters="java.awt.event.InputMethodEvent" handler="jTextFieldSignFile1InputMethodTextChanged"/>
-                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jTextFieldSignFile1ActionPerformed"/>
-                          </Events>
+                        <Component class="javax.swing.JTextField" name="jTextFieldDecryptFile">
                         </Component>
-                        <Component class="javax.swing.JButton" name="jButtonBrowseSignFile1">
+                        <Component class="javax.swing.JButton" name="jButtonBrowseEncrypt">
                           <Properties>
                             <Property name="text" type="java.lang.String" value="Browse..."/>
                           </Properties>
                           <Events>
-                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonBrowseSignFile1ActionPerformed"/>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonBrowseEncryptActionPerformed"/>
                           </Events>
                         </Component>
                         <Component class="javax.swing.JLabel" name="jLabel73">
@@ -4207,7 +4201,7 @@
                             <Property name="text" type="java.lang.String" value="Private Key for sign :"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JComboBox" name="jComboBoxSignPK1">
+                        <Component class="javax.swing.JComboBox" name="jComboBoxDecryptPK">
                           <Properties>
                             <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
                               <StringArray count="0"/>
@@ -4222,7 +4216,7 @@
                             <Property name="text" type="java.lang.String" value="Private Key Password :"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JTextField" name="jTextFieldSignPkPassword1">
+                        <Component class="javax.swing.JTextField" name="jTextFieldDecryptPW">
                         </Component>
                         <Component class="javax.swing.JLabel" name="jLabel75">
                           <Properties>
@@ -4267,6 +4261,14 @@
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jButtonDecryptActionPerformed"/>
                           </Events>
                         </Component>
+                        <Component class="javax.swing.JCheckBox" name="jCheckBoxCustomDecryptTryAll">
+                          <Properties>
+                            <Property name="text" type="java.lang.String" value="Try everything !"/>
+                          </Properties>
+                          <Events>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jCheckBoxCustomDecryptTryAllActionPerformed"/>
+                          </Events>
+                        </Component>
                       </SubComponents>
                     </Container>
                     <Container class="javax.swing.JPanel" name="jPanel16">
@@ -4296,24 +4298,19 @@
                                       <Group type="102" alignment="0" attributes="0">
                                           <Component id="jLabel72" min="-2" pref="126" max="-2" attributes="0"/>
                                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                          <Component id="jComboBoxVerifyCert" min="-2" pref="253" max="-2" attributes="0"/>
+                                          <Group type="103" groupAlignment="0" attributes="0">
+                                              <Component id="jCheckBoxCustomVerifyTryAll" min="-2" max="-2" attributes="0"/>
+                                              <Component id="jComboBoxVerifyCert" min="-2" pref="253" max="-2" attributes="0"/>
+                                          </Group>
                                       </Group>
                                   </Group>
-                                  <Group type="103" groupAlignment="0" attributes="0">
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <EmptySpace min="-2" pref="101" max="-2" attributes="0"/>
-                                          <Component id="jLabel71" min="-2" max="-2" attributes="0"/>
-                                          <EmptySpace min="-2" pref="44" max="-2" attributes="0"/>
-                                          <Component id="jTextFieldVerifyOutputFilename" min="-2" pref="150" max="-2" attributes="0"/>
-                                          <EmptySpace max="-2" attributes="0"/>
-                                          <Component id="jCheckBoxCustomVerify" min="-2" max="-2" attributes="0"/>
-                                      </Group>
-                                      <Group type="102" alignment="0" attributes="0">
-                                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                          <Component id="jCheckBoxCustomVerifyTryAll" min="-2" max="-2" attributes="0"/>
-                                      </Group>
-                                  </Group>
-                                  <EmptySpace max="32767" attributes="0"/>
+                                  <EmptySpace min="-2" pref="101" max="-2" attributes="0"/>
+                                  <Component id="jLabel71" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" pref="44" max="-2" attributes="0"/>
+                                  <Component id="jTextFieldVerifyOutputFilename" min="-2" pref="150" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="jCheckBoxCustomVerify" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace pref="250" max="32767" attributes="0"/>
                                   <Group type="103" groupAlignment="0" max="-2" attributes="0">
                                       <Component id="jButtonVerify" max="32767" attributes="0"/>
                                       <Component id="jButtonValidate" min="-2" pref="246" max="-2" attributes="0"/>
@@ -4340,8 +4337,9 @@
                                           <Group type="103" groupAlignment="3" attributes="0">
                                               <Component id="jLabel72" alignment="3" min="-2" max="-2" attributes="0"/>
                                               <Component id="jComboBoxVerifyCert" alignment="3" min="-2" pref="20" max="-2" attributes="0"/>
-                                              <Component id="jCheckBoxCustomVerifyTryAll" alignment="3" min="-2" max="-2" attributes="0"/>
                                           </Group>
+                                          <EmptySpace max="-2" attributes="0"/>
+                                          <Component id="jCheckBoxCustomVerifyTryAll" min="-2" max="-2" attributes="0"/>
                                       </Group>
                                       <Group type="102" alignment="0" attributes="0">
                                           <EmptySpace max="-2" attributes="0"/>

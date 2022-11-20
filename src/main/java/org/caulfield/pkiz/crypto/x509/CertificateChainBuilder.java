@@ -136,7 +136,7 @@ public class CertificateChainBuilder {
             name.addRDN(BCStyle.O, Org);
             name.addRDN(BCStyle.OU, OU);
             X500Name subject = name.build();
-            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
+            BigInteger serial = new BigInteger(Long.toString(System.currentTimeMillis()));
             X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
                     subject, // issuer authority  
                     serial, //serial number of certificate  
@@ -226,7 +226,7 @@ public class CertificateChainBuilder {
             name.addRDN(BCStyle.O, Org);
             name.addRDN(BCStyle.OU, OU);
             X500Name subject = name.build();
-            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
+            BigInteger serial = new BigInteger(Long.toString(System.currentTimeMillis()));
             X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
                     subject, // issuer authority  
                     serial, //serial number of certificate  
@@ -317,7 +317,7 @@ public class CertificateChainBuilder {
             name.addRDN(BCStyle.O, Org);
             name.addRDN(BCStyle.OU, OU);
             X500Name subject = name.build();
-            BigInteger serial = BigInteger.valueOf(new Random().nextInt());
+            BigInteger serial = new BigInteger(Long.toString(System.currentTimeMillis()));
             X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
                     subject, // issuer authority  
                     serial, //serial number of certificate  

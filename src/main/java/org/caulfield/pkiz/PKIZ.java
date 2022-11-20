@@ -64,6 +64,7 @@ import org.bouncycastle.util.encoders.Base64;
 import org.caulfield.pkiz.analyzer.FileAnalyzer;
 import org.caulfield.pkiz.crypto.CertType;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
+import org.caulfield.pkiz.crypto.EncryptionManager;
 import org.caulfield.pkiz.crypto.EnigmaException;
 import org.caulfield.pkiz.crypto.x509.CRLManager;
 import org.caulfield.pkiz.crypto.x509.CertificateChainBuilder;
@@ -185,6 +186,24 @@ public class PKIZ extends javax.swing.JFrame {
             }
 
         });
+
+        jTextFieldDecryptFile.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent de) {
+                jTextFieldDecryptOutputFilename.setText(getFileName(jTextFieldDecryptFile.getText()) + ".dec");
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent de) {
+                jTextFieldDecryptOutputFilename.setText(getFileName(jTextFieldCipherFile.getText()) + ".dec");
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent de) {
+                jTextFieldDecryptOutputFilename.setText(getFileName(jTextFieldCipherFile.getText()) + ".dec");
+            }
+
+        });
         ButtonGroup bG = new ButtonGroup();
         bG.add(jRadioButtonDER);
         bG.add(jRadioButtonPEM);
@@ -222,6 +241,7 @@ public class PKIZ extends javax.swing.JFrame {
                 jComboBoxSignSignerCert.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
                 jComboBoxCipherCert.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
                 jComboBoxWParents.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
+                // jComboBoxCipherCert.addItem(f.getInt("ID_CERT") + ". " + f.getString("CERTNAME"));
             }
         } catch (SQLException ex) {
             Logger.getLogger(PKIZ.class.getName()).log(Level.SEVERE, null, ex);
@@ -473,7 +493,7 @@ public class PKIZ extends javax.swing.JFrame {
 
         JMenuItem exportCRL = new JMenuItem("> Export CRL");
         exportCRL.addActionListener((ActionEvent e) -> {
-            Integer idCrl = (int)jTableCRL.getModel().getValueAt(jTableCRL.getSelectedRow(), 0);
+            Integer idCrl = (int) jTableCRL.getModel().getValueAt(jTableCRL.getSelectedRow(), 0);
             FileFilter ft = new FileNameExtensionFilter("CRL file (.crl)", "crl");
             jFileChooserExportCRL.resetChoosableFileFilters();
             jFileChooserExportCRL.setFileFilter(ft);
@@ -654,7 +674,7 @@ public class PKIZ extends javax.swing.JFrame {
             jComboBoxCSRPk.removeAllItems();
             jComboBoxSignPK.removeAllItems();
             jComboBoxCertPk.removeAllItems();
-            jComboBoxCipherCert.removeAllItems();
+            jComboBoxDecryptPK.removeAllItems();
             HSQLLoader database = new HSQLLoader();
             ResultSet f = database.runQuery("select ID_KEY,KEYNAME,ALGO from X509KEYS WHERE KEYTYPE=1");
             while (f.next()) {
@@ -662,8 +682,7 @@ public class PKIZ extends javax.swing.JFrame {
                 jComboBoxCSRPk.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
                 jComboBoxSignPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
                 jComboBoxCertPk.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                jComboBoxCipherCert.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
-                //jComboBoxWPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
+                jComboBoxDecryptPK.addItem(f.getInt("ID_KEY") + ". " + f.getString("KEYNAME") + " (" + f.getString("ALGO") + ")");
             }
             buildPopupMenuX509Keys();
         } catch (SQLException ex) {
@@ -936,16 +955,17 @@ public class PKIZ extends javax.swing.JFrame {
         jComboBoxCipherCert = new javax.swing.JComboBox<>();
         jPanel15 = new javax.swing.JPanel();
         jLabel45 = new javax.swing.JLabel();
-        jTextFieldSignFile1 = new javax.swing.JTextField();
-        jButtonBrowseSignFile1 = new javax.swing.JButton();
+        jTextFieldDecryptFile = new javax.swing.JTextField();
+        jButtonBrowseEncrypt = new javax.swing.JButton();
         jLabel73 = new javax.swing.JLabel();
-        jComboBoxSignPK1 = new javax.swing.JComboBox<>();
+        jComboBoxDecryptPK = new javax.swing.JComboBox<>();
         jLabel74 = new javax.swing.JLabel();
-        jTextFieldSignPkPassword1 = new javax.swing.JTextField();
+        jTextFieldDecryptPW = new javax.swing.JTextField();
         jLabel75 = new javax.swing.JLabel();
         jTextFieldDecryptOutputFilename = new javax.swing.JTextField();
         jCheckBoxCustomDecrypt = new javax.swing.JCheckBox();
         jButtonDecrypt = new javax.swing.JButton();
+        jCheckBoxCustomDecryptTryAll = new javax.swing.JCheckBox();
         jPanel16 = new javax.swing.JPanel();
         jCheckBoxCustomVerify = new javax.swing.JCheckBox();
         jTextFieldVerifyOutputFilename = new javax.swing.JTextField();
@@ -1182,7 +1202,7 @@ public class PKIZ extends javax.swing.JFrame {
         jFrameCertWizard.setMaximumSize(new java.awt.Dimension(490, 430));
         jFrameCertWizard.setMinimumSize(new java.awt.Dimension(490, 430));
         jFrameCertWizard.setPreferredSize(new java.awt.Dimension(490, 430));
-        jFrameCertWizard.getContentPane().setLayout(new java.awt.GridLayout());
+        jFrameCertWizard.getContentPane().setLayout(new java.awt.GridLayout(1, 0));
 
         jPanelCertWizard.setBorder(javax.swing.BorderFactory.createTitledBorder("Certificate Properties"));
 
@@ -1221,7 +1241,6 @@ public class PKIZ extends javax.swing.JFrame {
         jButtonWCertGenerate.setForeground(new java.awt.Color(255, 255, 255));
         jButtonWCertGenerate.setText("Create Certificate");
         jButtonWCertGenerate.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jButtonWCertGenerate.setMaximumSize(new java.awt.Dimension(150, 26));
         jButtonWCertGenerate.setMinimumSize(new java.awt.Dimension(120, 26));
         jButtonWCertGenerate.setPreferredSize(new java.awt.Dimension(120, 26));
         jButtonWCertGenerate.addActionListener(new java.awt.event.ActionListener() {
@@ -1404,7 +1423,6 @@ public class PKIZ extends javax.swing.JFrame {
         );
 
         jFrameCertWizard.getContentPane().add(jPanelCertWizard);
-        jPanelCertWizard.getAccessibleContext().setAccessibleName("Certificate Properties");
 
         jDialogFileImport.setTitle("Import Key");
         jDialogFileImport.setAlwaysOnTop(true);
@@ -2898,10 +2916,7 @@ public class PKIZ extends javax.swing.JFrame {
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel6Layout.createSequentialGroup()
-                        .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jTextFieldP10PkPw, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel34, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel36)
@@ -2912,7 +2927,9 @@ public class PKIZ extends javax.swing.JFrame {
                                 .addComponent(jTextFieldP10CN, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jComboBoxCSRPk, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jTextFieldP10PkPw)
+                                    .addComponent(jComboBoxCSRPk, 0, 146, Short.MAX_VALUE))))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jButtonBrowseP10Pk)))
                 .addGap(45, 45, 45)
@@ -2927,7 +2944,7 @@ public class PKIZ extends javax.swing.JFrame {
                         .addComponent(jLabel37)
                         .addGap(54, 54, 54)
                         .addComponent(jTextFieldP10TargetFilename, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 324, Short.MAX_VALUE)
                 .addComponent(jButtonCSRGenerate, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(14, 14, 14))
         );
@@ -3268,23 +3285,10 @@ public class PKIZ extends javax.swing.JFrame {
 
         jLabel45.setText("Target File :");
 
-        jTextFieldSignFile1.addInputMethodListener(new java.awt.event.InputMethodListener() {
-            public void caretPositionChanged(java.awt.event.InputMethodEvent evt) {
-            }
-            public void inputMethodTextChanged(java.awt.event.InputMethodEvent evt) {
-                jTextFieldSignFile1InputMethodTextChanged(evt);
-            }
-        });
-        jTextFieldSignFile1.addActionListener(new java.awt.event.ActionListener() {
+        jButtonBrowseEncrypt.setText("Browse...");
+        jButtonBrowseEncrypt.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextFieldSignFile1ActionPerformed(evt);
-            }
-        });
-
-        jButtonBrowseSignFile1.setText("Browse...");
-        jButtonBrowseSignFile1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonBrowseSignFile1ActionPerformed(evt);
+                jButtonBrowseEncryptActionPerformed(evt);
             }
         });
 
@@ -3319,6 +3323,13 @@ public class PKIZ extends javax.swing.JFrame {
             }
         });
 
+        jCheckBoxCustomDecryptTryAll.setText("Try everything !");
+        jCheckBoxCustomDecryptTryAll.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxCustomDecryptTryAllActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel15Layout = new javax.swing.GroupLayout(jPanel15);
         jPanel15.setLayout(jPanel15Layout);
         jPanel15Layout.setHorizontalGroup(
@@ -3329,13 +3340,15 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel15Layout.createSequentialGroup()
                         .addComponent(jLabel45)
                         .addGap(78, 78, 78)
-                        .addComponent(jTextFieldSignFile1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jTextFieldDecryptFile, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(8, 8, 8)
-                        .addComponent(jButtonBrowseSignFile1, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jButtonBrowseEncrypt, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel15Layout.createSequentialGroup()
                         .addComponent(jLabel73, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jComboBoxSignPK1, javax.swing.GroupLayout.PREFERRED_SIZE, 253, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBoxCustomDecryptTryAll)
+                            .addComponent(jComboBoxDecryptPK, javax.swing.GroupLayout.PREFERRED_SIZE, 253, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 100, Short.MAX_VALUE)
                 .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel15Layout.createSequentialGroup()
@@ -3347,7 +3360,7 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel15Layout.createSequentialGroup()
                         .addComponent(jLabel74)
                         .addGap(18, 18, 18)
-                        .addComponent(jTextFieldSignPkPassword1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jTextFieldDecryptPW, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(258, 258, 258)
                 .addComponent(jButtonDecrypt, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(17, 17, 17))
@@ -3360,19 +3373,21 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel15Layout.createSequentialGroup()
                         .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel45)
-                            .addComponent(jTextFieldSignFile1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButtonBrowseSignFile1)
+                            .addComponent(jTextFieldDecryptFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButtonBrowseEncrypt)
                             .addComponent(jLabel75)
                             .addComponent(jTextFieldDecryptOutputFilename, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jCheckBoxCustomDecrypt))
                         .addGap(18, 18, 18)
                         .addGroup(jPanel15Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel73)
-                            .addComponent(jComboBoxSignPK1, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jComboBoxDecryptPK, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel74)
-                            .addComponent(jTextFieldSignPkPassword1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jTextFieldDecryptPW, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(jButtonDecrypt, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(48, 48, 48))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jCheckBoxCustomDecryptTryAll)
+                .addGap(22, 22, 22))
         );
 
         jPanel16.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Verify Signature", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Tahoma", 1, 11))); // NOI18N
@@ -3457,19 +3472,16 @@ public class PKIZ extends javax.swing.JFrame {
                     .addGroup(jPanel16Layout.createSequentialGroup()
                         .addComponent(jLabel72, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jComboBoxVerifyCert, javax.swing.GroupLayout.PREFERRED_SIZE, 253, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel16Layout.createSequentialGroup()
-                        .addGap(101, 101, 101)
-                        .addComponent(jLabel71)
-                        .addGap(44, 44, 44)
-                        .addComponent(jTextFieldVerifyOutputFilename, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jCheckBoxCustomVerify))
-                    .addGroup(jPanel16Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jCheckBoxCustomVerifyTryAll)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jCheckBoxCustomVerifyTryAll)
+                            .addComponent(jComboBoxVerifyCert, javax.swing.GroupLayout.PREFERRED_SIZE, 253, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(101, 101, 101)
+                .addComponent(jLabel71)
+                .addGap(44, 44, 44)
+                .addComponent(jTextFieldVerifyOutputFilename, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jCheckBoxCustomVerify)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 250, Short.MAX_VALUE)
                 .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jButtonVerify, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButtonValidate, javax.swing.GroupLayout.PREFERRED_SIZE, 246, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -3491,8 +3503,9 @@ public class PKIZ extends javax.swing.JFrame {
                         .addGap(34, 34, 34)
                         .addGroup(jPanel16Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel72)
-                            .addComponent(jComboBoxVerifyCert, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jCheckBoxCustomVerifyTryAll)))
+                            .addComponent(jComboBoxVerifyCert, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jCheckBoxCustomVerifyTryAll))
                     .addGroup(jPanel16Layout.createSequentialGroup()
                         .addContainerGap()
                         .addComponent(jButtonVerify, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -4576,7 +4589,7 @@ public class PKIZ extends javax.swing.JFrame {
             CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_CLIENT);
         } else if (typeCert.equals("End User Server Certificate")) {
             CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_SERVER);
-       } else if (typeCert.equals("End User Multipurpose Certificate")) {
+        } else if (typeCert.equals("End User Multipurpose Certificate")) {
             CertificateChainBuilder.createEndUserCert(expiryDateCert, CNCert, OrgCert, OUCert, aliasCert, exportCert, jTextFieldGlobalOutput.getText(), password1, parentCert, CertType.ENDUSER_MULTI);
         }
         refreshCertificateCombos();
@@ -4607,6 +4620,24 @@ public class PKIZ extends javax.swing.JFrame {
     private void jCheckBoxWexportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxWexportActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jCheckBoxWexportActionPerformed
+
+    private void jCheckBoxCustomDecryptTryAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxCustomDecryptTryAllActionPerformed
+        // TODO add your handling code here:
+        JCheckBox cbLog = (JCheckBox) evt.getSource();
+        if (cbLog.isSelected()) {
+            jComboBoxDecryptPK.setEnabled(false);
+        } else {
+            jComboBoxDecryptPK.setEnabled(true);
+        }
+    }//GEN-LAST:event_jCheckBoxCustomDecryptTryAllActionPerformed
+
+    private void jButtonBrowseEncryptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseEncryptActionPerformed
+        // TODO add your handling code here:
+        int retour = jFileChooserFileOnly.showOpenDialog(this);
+        if (retour == JFileChooser.APPROVE_OPTION) {
+            jTextFieldDecryptFile.setText(jFileChooserFileOnly.getSelectedFile().getAbsolutePath());
+        }
+    }//GEN-LAST:event_jButtonBrowseEncryptActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton8ActionPerformed
         // TODO add your handling code here:
@@ -4950,10 +4981,31 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jCheckBoxCustomDecryptActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jCheckBoxCustomDecryptActionPerformed
         // TODO add your handling code here:
+        JCheckBox cbLog = (JCheckBox) evt.getSource();
+        if (cbLog.isSelected()) {
+            jTextFieldDecryptOutputFilename.setEnabled(true);
+            jTextFieldDecryptOutputFilename.setText("");
+        } else {
+            jTextFieldDecryptOutputFilename.setEnabled(false);
+            jTextFieldDecryptOutputFilename.setText(getFileName(jTextFieldDecryptFile.getText()) + ".decrypted");
+        }
     }// GEN-LAST:event_jCheckBoxCustomDecryptActionPerformed
 
     private void jButtonDecryptActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButtonDecryptActionPerformed
         // TODO add your handling code here:
+        CryptoGenerator cg = new CryptoGenerator();
+        String outRet = "";
+        String targetFileName = jTextFieldDecryptOutputFilename.getText();
+        if (jCheckBoxCustomDecrypt.isSelected()) {
+            targetFileName = jTextFieldDecryptFile.getText() + ".decrypted";
+        }
+        if (jCheckBoxCustomDecryptTryAll.isSelected()) {
+            outRet = cg.decipherFileTryEverything(jTextFieldDecryptFile.getText(), (String) jComboBoxDecryptPK.getSelectedItem(), jTextFieldDecryptPW.getText(), jTextFieldGlobalOutput.getText(), targetFileName);
+        } else {
+            outRet = cg.decipherFile(jTextFieldDecryptFile.getText(), (String) jComboBoxDecryptPK.getSelectedItem(), jTextFieldDecryptPW.getText(), jTextFieldGlobalOutput.getText(), targetFileName);
+        }
+
+        ((DefaultListModel) jListEvents.getModel()).addElement(outRet);
     }// GEN-LAST:event_jButtonDecryptActionPerformed
 
     /**
@@ -5010,13 +5062,13 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonBrowseCertPk;
     private javax.swing.JButton jButtonBrowseCertPub;
     private javax.swing.JButton jButtonBrowseCipherFile;
+    private javax.swing.JButton jButtonBrowseEncrypt;
     private javax.swing.JButton jButtonBrowseGlobalOutput;
     private javax.swing.JButton jButtonBrowseGlobalOutput1;
     private javax.swing.JButton jButtonBrowseP10Pk;
     private javax.swing.JButton jButtonBrowseP10PubK;
     private javax.swing.JButton jButtonBrowsePubPk;
     private javax.swing.JButton jButtonBrowseSignFile;
-    private javax.swing.JButton jButtonBrowseSignFile1;
     private javax.swing.JButton jButtonBrowseVerifyFile;
     private javax.swing.JButton jButtonBruteForce;
     private javax.swing.JButton jButtonBruteForceCancel;
@@ -5063,6 +5115,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JCheckBox jCheckBox2;
     private javax.swing.JCheckBox jCheckBoxCustomCipher;
     private javax.swing.JCheckBox jCheckBoxCustomDecrypt;
+    private javax.swing.JCheckBox jCheckBoxCustomDecryptTryAll;
     private javax.swing.JCheckBox jCheckBoxCustomVerify;
     private javax.swing.JCheckBox jCheckBoxCustomVerifyTryAll;
     private javax.swing.JCheckBox jCheckBoxP10PubKey;
@@ -5084,9 +5137,9 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> jComboBoxCertPubK;
     private javax.swing.JComboBox<String> jComboBoxCertVersion;
     private javax.swing.JComboBox<String> jComboBoxCipherCert;
+    private javax.swing.JComboBox<String> jComboBoxDecryptPK;
     private javax.swing.JComboBox<String> jComboBoxPubPK;
     private javax.swing.JComboBox<String> jComboBoxSignPK;
-    private javax.swing.JComboBox<String> jComboBoxSignPK1;
     private javax.swing.JComboBox<String> jComboBoxSignSignerCert;
     private javax.swing.JComboBox<String> jComboBoxVerifyCert;
     private javax.swing.JComboBox<String> jComboBoxWParents;
@@ -5275,7 +5328,9 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldCipherOutputFilename;
     private javax.swing.JTextField jTextFieldConvertSourceFile;
     private javax.swing.JTextField jTextFieldCountry;
+    private javax.swing.JTextField jTextFieldDecryptFile;
     private javax.swing.JTextField jTextFieldDecryptOutputFilename;
+    private javax.swing.JTextField jTextFieldDecryptPW;
     private javax.swing.JTextField jTextFieldDrop;
     private javax.swing.JTextField jTextFieldGlobalOutput;
     private javax.swing.JTextField jTextFieldImportKeyFile;
@@ -5296,10 +5351,8 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldPubTargetFilename;
     private javax.swing.JTextField jTextFieldPubTargetKeyName;
     private javax.swing.JTextField jTextFieldSignFile;
-    private javax.swing.JTextField jTextFieldSignFile1;
     private javax.swing.JTextField jTextFieldSignOutputFilename;
     private javax.swing.JTextField jTextFieldSignPkPassword;
-    private javax.swing.JTextField jTextFieldSignPkPassword1;
     private javax.swing.JTextField jTextFieldVerifyFile;
     private javax.swing.JTextField jTextFieldVerifyOutputFilename;
     private javax.swing.JTextField jTextFieldWAlias;

@@ -108,12 +108,16 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.CMSTypedData;
+import org.bouncycastle.cms.KeyTransRecipientInformation;
+import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKeyTransRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.engines.DESedeEngine;
@@ -176,6 +180,7 @@ import org.caulfield.pkiz.database.definition.EnigmaCertificate;
 import org.caulfield.pkiz.database.definition.EnigmaKey;
 import org.caulfield.pkiz.database.definition.HSQLLoader;
 import org.caulfield.pkiz.stream.StreamManager;
+import org.openide.util.Exceptions;
 
 public class CryptoGenerator {
 
@@ -1561,16 +1566,16 @@ public class CryptoGenerator {
             CharsetEncoder encoder = charset.newEncoder();
             CharBuffer buffer = CharBuffer.wrap(sw.getBuffer());
             byte[] bytesStringWriter = encoder.encode(buffer).array();
-*/
+             */
             // InputStream inputStream = new ByteArrayInputStream(bytesStringWriter);
             InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
-           // System.out.println("XXXXXXXXXXX ! " + IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+            // System.out.println("XXXXXXXXXXX ! " + IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
             //InputStream inputStream = IOUtils.toInputStream(sw.toString(), "UTF-8");
             //InputStream inputStream = new ByteArrayInputStream(sw.toString().getBytes("UTF8"));
             byte[] hash = hashc.checksum(inputStream, HashCalculator.SHA256);
             String realHash = DatatypeConverter.printHexBinary(hash);
             // Write in Database
-               inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
+            inputStream = new ByteArrayInputStream(sw.toString().getBytes(StandardCharsets.UTF_8));
             long pkID = CryptoDAO.insertKeyInDB(inputStream, keyname, algo, realHash, 0, true, privateKeyPassword);
             ek.setKeyStream(inputStream);
             ek.setId((int) pkID);
@@ -1671,6 +1676,9 @@ public class CryptoGenerator {
                     .getName()).log(Level.SEVERE, null, ex);
             return ex.getMsg();
         }
+        if (!CN.contains("CN=")) {
+            CN = "CN=" + CN;
+        }
         try {
             byte[] encoded = publicKey.getEncoded();
             SubjectPublicKeyInfo publicKeyInfo = new SubjectPublicKeyInfo(
@@ -1685,10 +1693,10 @@ public class CryptoGenerator {
 
             X509CertificateHolder certHolder = null;
             if ("V1".equals(certVersion)) {
-                X509v1CertificateBuilder v1CertGen = new X509v1CertificateBuilder(new X500Name(CN), BigInteger.ONE, startDate, endDate, new X500Name(CN), publicKeyInfo);
+                X509v1CertificateBuilder v1CertGen = new X509v1CertificateBuilder(new X500Name(CN), new BigInteger(Long.toString(System.currentTimeMillis())), startDate, endDate, new X500Name(CN), publicKeyInfo);
                 certHolder = v1CertGen.build(sigGen);
             } else {
-                X509v3CertificateBuilder v3CertGen = new X509v3CertificateBuilder(new X500Name(CN), BigInteger.ONE, startDate, endDate, new X500Name(CN), publicKeyInfo);
+                X509v3CertificateBuilder v3CertGen = new X509v3CertificateBuilder(new X500Name(CN), new BigInteger(Long.toString(System.currentTimeMillis())), startDate, endDate, new X500Name(CN), publicKeyInfo);
                 certHolder = v3CertGen.build(sigGen);
             }
             final File publicKeyFile = new File(targetDirectory + targetFilename);
@@ -2433,16 +2441,26 @@ public class CryptoGenerator {
                 algo = CMSAlgorithm.SEED_CBC;
             }
 
-            CMSEnvelopedData cypheredData = envelopedGen.generate(new CMSProcessableByteArray(data), new JceCMSContentEncryptorBuilder(algo).build());
-            ContentInfo outDatas = cypheredData.toASN1Structure();
-
+            //   CMSEnvelopedData cypheredData = envelopedGen.generate(new CMSProcessableByteArray(data), new JceCMSContentEncryptorBuilder(algo).build());
+            // ContentInfo outDatas = cypheredData.toASN1Structure();
+            CMSEnvelopedDataGenerator cmsEnvelopedDataGenerator = new CMSEnvelopedDataGenerator();
+            JceKeyTransRecipientInfoGenerator jceKey = new JceKeyTransRecipientInfoGenerator(x509cert);
+            cmsEnvelopedDataGenerator.addRecipientInfoGenerator(jceKey);
+            CMSTypedData msg = new CMSProcessableByteArray(data);
+            OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider("BC").build();
+            CMSEnvelopedData cmsEnvelopedData = cmsEnvelopedDataGenerator.generate(msg, encryptor);
+            //    ContentInfo outDatas = cmsEnvelopedData.toASN1Structure();
+            data = cmsEnvelopedData.getEncoded();
             final File cihperedFile = new File(targetDirectory + outputFilename);
-            final JcaPEMWriter publicPemWriter = new JcaPEMWriter(
-                    new FileWriter(cihperedFile));
+            try ( FileOutputStream outputStream = new FileOutputStream(cihperedFile)) {
+                outputStream.write(data);
+            }
+            /*            
+            final JcaPEMWriter publicPemWriter = new JcaPEMWriter(new FileWriter(cihperedFile));
             publicPemWriter.writeObject(outDatas);
             publicPemWriter.flush();
-            publicPemWriter.close();
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + cypheredData);
+            publicPemWriter.close();*/
+            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + cmsEnvelopedData.toASN1Structure());
 
             return "File " + outputFilename + " successfuly encrypted.";
 
@@ -2459,7 +2477,82 @@ public class CryptoGenerator {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
             return "Failed to cypher file " + targetFile + " : " + ex.getMessage();
         }
+    }
 
+    public String decipherFile(String targetFile, String decipherKey, String password, String targetDirectory, String outputFilename) {
+        try {
+            Integer idKey = getKeyIDFromComboBox(decipherKey);
+            InputStream isc = CryptoDAO.getKeyFromDB(idKey);
+            PrivateKey decryptionKey = getPrivateKey(isc, password);
+            Path path = Paths.get(targetFile);
+            byte[] encryptedData = Files.readAllBytes(path);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.decipherFile()" + new String(encryptedData));
+            byte[] decryptedData = null;
+            if (null != encryptedData && null != decryptionKey) {
+
+                CMSEnvelopedData envelopedData = new CMSEnvelopedData(encryptedData);
+                Collection<RecipientInformation> recipients = envelopedData.getRecipientInfos().getRecipients();
+                KeyTransRecipientInformation recipientInfo = (KeyTransRecipientInformation) recipients.iterator().next();
+                JceKeyTransRecipient recipient = new JceKeyTransEnvelopedRecipient(decryptionKey);
+                decryptedData = recipientInfo.getContent(recipient);
+                final File decipheredFile = new File(targetDirectory + outputFilename);
+                //final JcaPEMWriter publicPemWriter = new JcaPEMWriter(new FileWriter(decipheredFile));
+                //publicPemWriter.writeObject(decryptedData);
+                //publicPemWriter.flush();
+                //publicPemWriter.close();
+
+                try ( FileOutputStream outputStream = new FileOutputStream(decipheredFile)) {
+                    outputStream.write(decryptedData);
+                }
+                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + new String(decryptedData));
+                return "File " + outputFilename + " successfuly decrypted.";
+            }
+        } catch (EnigmaException | CMSException | IOException ex) {
+            Exceptions.printStackTrace(ex);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.decipherFile()" + ex.getMessage());
+            return "File " + outputFilename + " decryption failed.";
+        }
+        return "File " + outputFilename + " decryption failed.";
+    }
+
+    public String decipherFileTryEverything(String targetFile, String decipherKey, String password, String targetDirectory, String outputFilename) {
+        try {
+            List<Integer> keys = CryptoDAO.getAllKeysID();
+            byte[] decryptedData = null;
+            for (Integer idKey : keys) {
+                InputStream isc = CryptoDAO.getKeyFromDB(idKey);
+                PrivateKey decryptionKey = getPrivateKey(isc, password);
+                Path path = Paths.get(targetFile);
+                byte[] encryptedData = Files.readAllBytes(path);
+
+                if (null != encryptedData && null != decryptionKey) {
+                    CMSEnvelopedData envelopedData = new CMSEnvelopedData(encryptedData);
+
+                    Collection<RecipientInformation> recipients
+                            = envelopedData.getRecipientInfos().getRecipients();
+                    KeyTransRecipientInformation recipientInfo
+                            = (KeyTransRecipientInformation) recipients.iterator().next();
+                    JceKeyTransRecipient recipient
+                            = new JceKeyTransEnvelopedRecipient(decryptionKey);
+                    decryptedData = recipientInfo.getContent(recipient);
+                    if (decryptedData != null) {
+                        break;
+                    }
+                }
+            }
+            if (decryptedData != null) {
+                final File decipheredFile = new File(targetDirectory + outputFilename);
+                try ( FileOutputStream outputStream = new FileOutputStream(decipheredFile)) {
+                    outputStream.write(decryptedData);
+                }
+                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + decryptedData);
+                return "File " + outputFilename + " successfuly decrypted.";
+            }
+        } catch (EnigmaException | CMSException | IOException ex) {
+            Exceptions.printStackTrace(ex);
+            return "File " + outputFilename + " decryption failed.";
+        }
+        return "File " + outputFilename + " decryption failed.";
     }
 
     public byte[] removeDelimiters(byte[] buffer) {
