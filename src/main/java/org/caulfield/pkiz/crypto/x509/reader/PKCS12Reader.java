@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509.reader;
 
 import java.io.BufferedReader;
@@ -25,8 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class PKCS12Reader {
 
@@ -80,7 +74,7 @@ public class PKCS12Reader {
 
             KeyStore kstore = null;
             int type = getKeystoreType(f);
-            System.out.println("org.caulfield.enigma.crypto.x509.PKCS12Reader.getPKCS12()" + type);
+            System.out.println("org.caulfield.pkiz.crypto.x509.PKCS12Reader.getPKCS12()" + type);
             switch (type) {
                 case JKS: {
                     kstore = KeyStore.getInstance("jks");
@@ -89,7 +83,7 @@ public class PKCS12Reader {
                     Enumeration e = kstore.aliases();
                     while (e.hasMoreElements()) {
                         String alias = (String) e.nextElement();
-                        System.out.println("org.caulfield.enigma.crypto.x509.PKCS12Reader.getPKCS12()" + alias);
+                        System.out.println("org.caulfield.pkiz.crypto.x509.PKCS12Reader.getPKCS12()" + alias);
                         X509Certificate c = (X509Certificate) kstore.getCertificate(alias);
                         if (c == null) {
 //                            PKCS8 ;
@@ -97,7 +91,7 @@ public class PKCS12Reader {
                             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(key.getEncoded());
                             KeyFactory kf = KeyFactory.getInstance("RSA");
                             PrivateKey privKey = kf.generatePrivate(keySpec);
-                            System.out.println("org.caulfield.enigma.crypto.x509.PKCS12Reader.getPKCS12()" + privKey);
+                            System.out.println("org.caulfield.pkiz.crypto.x509.PKCS12Reader.getPKCS12()" + privKey);
                         } else {
                             Principal subject = c.getSubjectDN();
                             String subjectArray[] = subject.toString().split(",");
@@ -118,7 +112,7 @@ public class PKCS12Reader {
                     Enumeration e = kstore.aliases();
                     while (e.hasMoreElements()) {
                         String alias = (String) e.nextElement();
-                        System.out.println("org.caulfield.enigma.crypto.x509.PKCS12Reader.getPKCS12()" + alias);
+                        System.out.println("org.caulfield.pkiz.crypto.x509.PKCS12Reader.getPKCS12()" + alias);
                         X509Certificate c = (X509Certificate) kstore.getCertificate(alias);
                         if (c == null) {
 //                            PKCS8 ;
@@ -126,7 +120,7 @@ public class PKCS12Reader {
                             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(key.getEncoded());
                             KeyFactory kf = KeyFactory.getInstance("RSA");
                             PrivateKey privKey = kf.generatePrivate(keySpec);
-                            System.out.println("org.caulfield.enigma.crypto.x509.PKCS12Reader.getPKCS12()" + privKey);
+                            System.out.println("org.caulfield.pkiz.crypto.x509.PKCS12Reader.getPKCS12()" + privKey);
                         } else {
                             Principal subject = c.getSubjectDN();
                             String subjectArray[] = subject.toString().split(",");

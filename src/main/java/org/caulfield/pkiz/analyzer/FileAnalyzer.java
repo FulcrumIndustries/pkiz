@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.analyzer;
 
 import eu.medsea.mimeutil.MimeUtil;
@@ -24,8 +19,7 @@ import org.caulfield.pkiz.crypto.pgp.PGPManager;
 import org.caulfield.pkiz.crypto.x509.X509Detector;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class FileAnalyzer {
 

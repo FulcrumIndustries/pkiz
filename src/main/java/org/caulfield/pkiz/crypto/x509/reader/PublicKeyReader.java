@@ -1,13 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509.reader;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 import java.io.BufferedReader;
 import java.io.File;
@@ -129,7 +123,7 @@ public class PublicKeyReader {
                 KeyFactory keyFac = KeyFactory.getInstance("RSA");
                 RSAPublicKeySpec publicKey = keyFac.getKeySpec(kp.getPublic(), RSAPublicKeySpec.class);
                 System.out.println(publicKey.getClass());
-                System.out.println("org.caulfield.enigma.crypto.x509.PrivateKeyReader.getPublicKey()" + publicKey.getPublicExponent());
+                System.out.println("org.caulfield.pkiz.crypto.x509.PrivateKeyReader.getPublicKey()" + publicKey.getPublicExponent());
 
                 return "RSA Public Key File detected.";
             } else {

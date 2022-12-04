@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509;
 
 import java.io.InputStream;
@@ -35,8 +30,7 @@ import org.caulfield.pkiz.database.definition.HSQLLoader;
 import org.caulfield.pkiz.stream.StreamManager;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class CertificateChainManager {
 

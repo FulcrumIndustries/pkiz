@@ -4,8 +4,10 @@ import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Paths;
 
+/**
+ * @author pbakhtiari
+ */
 public class TestExecutor {
-
     public static void executeBruteForce(String messageFile, String outputFile, int[] keysSize, int trials, String algorithm) throws Exception {
         String message = FileUtils.readFileToString(Paths.get(messageFile).toFile(), "UTF-8");
         FileUtils.write(Paths.get(outputFile).toFile(), "key_size;generate_keys;encrypt;decrypt;brute_force\n", "UTF-8", true);

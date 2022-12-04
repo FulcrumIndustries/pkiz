@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509.reader;
 
 import java.io.BufferedReader;
@@ -10,15 +5,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.openide.util.Exceptions;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class CertificateReader {
 
@@ -63,11 +60,13 @@ public class CertificateReader {
             }
 
             //byte[] encoded = DatatypeConverter.parseBase64Binary(builder.toString());
-            CertificateFactory fact = CertificateFactory.getInstance("X.509");
-            File fF = new File(fileName);
-            FileInputStream fiS = new FileInputStream(fF);
-            X509Certificate cer = (X509Certificate) fact.generateCertificate(fiS);
-            System.out.println("org.caulfield.enigma.crypto.x509.CSRReader.getCertificate()" + cer.getSubjectX500Principal().getName());
+            // CertificateFactory fact = CertificateFactory.getInstance("X.509");
+            f = new File(fileName);
+            fis = new FileInputStream(f);
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+            CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+            X509Certificate cer = (X509Certificate) cf.generateCertificate(fis);
+            System.out.println("org.caulfield.pkiz.crypto.x509.CSRReader.getCertificate()" + cer.getSubjectX500Principal().getName());
             return format + " certificate detected.";
 
         } catch (IOException | NullPointerException ex) {
@@ -75,6 +74,9 @@ public class CertificateReader {
             return "Not a certificate";
         } catch (CertificateException ex) {
             Logger.getLogger(CertificateReader.class.getName()).log(Level.SEVERE, null, ex);
+            return "Not a certificate";
+        } catch (NoSuchProviderException ex) {
+            Exceptions.printStackTrace(ex);
             return "Not a certificate";
         }
     }

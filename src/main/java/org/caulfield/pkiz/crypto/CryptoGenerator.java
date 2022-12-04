@@ -66,16 +66,11 @@ import javax.crypto.spec.DHParameterSpec;
 
 import javax.security.auth.x500.X500Principal;
 import jakarta.xml.bind.DatatypeConverter;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
-import org.apache.commons.io.IOUtils;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 
 import org.bouncycastle.asn1.DERBMPString;
-import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -182,6 +177,9 @@ import org.caulfield.pkiz.database.definition.HSQLLoader;
 import org.caulfield.pkiz.stream.StreamManager;
 import org.openide.util.Exceptions;
 
+/**
+ * @author pbakhtiari
+ */
 public class CryptoGenerator {
 
     public static AsymmetricCipherKeyPair createRSAKey(int size, String publicExponent, int certainty) {
@@ -387,7 +385,7 @@ public class CryptoGenerator {
             if (!quickCheckPrivateKey(is1)) {
                 throw new EnigmaException("Not a private key file.");
             } else {
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() private key file");
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() private key file");
             }
 
             BufferedReader br = new BufferedReader(new InputStreamReader(is3));
@@ -418,7 +416,7 @@ public class CryptoGenerator {
             byte[] encoded = DatatypeConverter.parseBase64Binary(builder.toString());
             Security.addProvider(new BouncyCastleProvider());
             if (isEncryptedRSAKey) {
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() ENCRYPTED CASE");
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() ENCRYPTED CASE");
                 BufferedReader brs = new BufferedReader(new InputStreamReader(is2));
 
                 PEMParser parser = new PEMParser(brs);
@@ -432,7 +430,7 @@ public class CryptoGenerator {
                     JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 
                     key = converter.getPrivateKey(info);
-                    System.out.println("org.caulfield.enigma.crypto.x509.PrivateKeyReader.getPrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
+                    System.out.println("org.caulfield.pkiz.crypto.x509.PrivateKeyReader.getPrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
                 } catch (OperatorCreationException ex) {
                     Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (PKCSException ex) {
@@ -441,7 +439,7 @@ public class CryptoGenerator {
 
             } else if (isRSAKey) {
                 //keySpec = getRSAKeySpec(encoded);
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() RSA CASE");
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() RSA CASE");
                 BufferedReader brs = new BufferedReader(new InputStreamReader(is2));
                 PEMParser pemParser = new PEMParser(brs);
                 Object object = pemParser.readObject();
@@ -477,14 +475,14 @@ public class CryptoGenerator {
 //
 //                // decode to get the binary DER representation
 //                byte[] privateKeyDER = Base64.decode(privateKeyPEM);
-//                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() " + new String(privateKeyDER));
+//                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() " + new String(privateKeyDER));
 //                Security.addProvider(new BouncyCastleProvider());
 //                PemReader reader = new PemReader(new StringReader(privateKeyPEM));
 //                DSAPrivateKey decoded = (DSAPrivateKey) reader.readPemObject();
 //                key = decoded;
 //                KeyFactory keyFactory = KeyFactory.getInstance("DSA", "BC");
 //                key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyDER));
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() ENTERING PKCS8 Loader");
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() ENTERING PKCS8 Loader");
                 // TRY RSA PKCS8
                 try {
                     PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(encoded);
@@ -493,20 +491,20 @@ public class CryptoGenerator {
                     key = kf.generatePrivate(spec);
                 } catch (InvalidKeySpecException | NoSuchAlgorithmException | NoSuchProviderException ex) {
                     try {
-                        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() GOING DEEPER DSA PKCS8 !");
+                        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() GOING DEEPER DSA PKCS8 !");
                         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(encoded);
                         KeyFactory kf = KeyFactory.getInstance("DSA", "BC");
 
                         key = kf.generatePrivate(spec);
                     } catch (InvalidKeySpecException | NoSuchAlgorithmException | NoSuchProviderException xex) {
                         try {
-                            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() STILL NOTHING GOING EC ?");
+                            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() STILL NOTHING GOING EC ?");
                             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(encoded);
                             KeyFactory kf = KeyFactory.getInstance("EC", "BC");
 
                             key = kf.generatePrivate(spec);
                         } catch (InvalidKeySpecException | NoSuchAlgorithmException | NoSuchProviderException xesx) {
-                            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPrivateKey() MORE MORE");
+                            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() MORE MORE");
                         }
                     }
                 }
@@ -599,7 +597,7 @@ public class CryptoGenerator {
                     JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 
                     key = converter.getPrivateKey(info);
-                    System.out.println("org.caulfield.enigma.crypto.x509.PrivateKeyReader.getPrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
+                    System.out.println("org.caulfield.pkiz.crypto.x509.PrivateKeyReader.getPrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
 
                 } catch (OperatorCreationException ex) {
                     Logger.getLogger(PrivateKeyReader.class
@@ -710,7 +708,7 @@ public class CryptoGenerator {
         PublicKey myPublicKey = null;
         try {
             myPrivateKey = getPrivateKey(filename, privateKeyPassword);
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() PRIVATE IS " + myPrivateKey.getClass());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() PRIVATE IS " + myPrivateKey.getClass());
 
         } catch (EnigmaException ex) {
             Logger.getLogger(CryptoGenerator.class
@@ -797,7 +795,7 @@ public class CryptoGenerator {
             }
         }
         if (myPublicKey == null) {
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() EMPTY KEY");
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() EMPTY KEY");
         }
         return myPublicKey;
 
@@ -885,7 +883,7 @@ public class CryptoGenerator {
             }
         }
         if (myPublicKey == null) {
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() EMPTY KEY");
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.buildPublicKeyFromPrivateKey() EMPTY KEY");
         }
         return myPublicKey;
     }
@@ -965,7 +963,7 @@ public class CryptoGenerator {
             byte[] encoded = myPublicKey.getEncoded();
             SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo(
                     ASN1Sequence.getInstance(encoded));
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.writePublicKey()" + subjectPublicKeyInfo.parsePublicKey().toASN1Primitive().toString());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.writePublicKey()" + subjectPublicKeyInfo.parsePublicKey().toASN1Primitive().toString());
             retour = "Public key " + directory + fileOutName + " successfully created.";
 
         } catch (IOException ex) {
@@ -1478,7 +1476,7 @@ public class CryptoGenerator {
                 privatePemWriter.close();
                 //byte[] encoded = privkey.getEncoded();
                 //PrivateKeyInfo info = PrivateKeyInfo.getInstance(ASN1Sequence.getInstance(encoded));
-                //System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.writePrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
+                //System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.writePrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
 
             } catch (IOException | OperatorCreationException ex) {
                 Logger.getLogger(CryptoGenerator.class
@@ -1603,7 +1601,7 @@ public class CryptoGenerator {
     public boolean quickCheckPublicKey(InputStream publicKeyFile) throws FileNotFoundException, IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(publicKeyFile));
         String line = br.readLine();
-        //System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.quickCheckPublicKey() LINE READ " + line);
+        //System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.quickCheckPublicKey() LINE READ " + line);
         return line.contains("PUBLIC");
     }
 
@@ -1777,12 +1775,12 @@ public class CryptoGenerator {
             byte[] encoded = DatatypeConverter.parseBase64Binary(builder.toString());
             X509EncodedKeySpec spec
                     = new X509EncodedKeySpec(encoded);
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() : " + builder.toString());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() : " + builder.toString());
             KeyFactory kf = KeyFactory.getInstance("RSA");
 
             SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo(
                     ASN1Sequence.getInstance(encoded));
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2()" + subjectPublicKeyInfo.parsePublicKey().toASN1Primitive().toString());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2()" + subjectPublicKeyInfo.parsePublicKey().toASN1Primitive().toString());
 
             return kf.generatePublic(spec);
 
@@ -1850,24 +1848,24 @@ public class CryptoGenerator {
             byte[] encoded = DatatypeConverter.parseBase64Binary(builder.toString());
             X509EncodedKeySpec spec
                     = new X509EncodedKeySpec(encoded);
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() : " + builder.toString());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() : " + builder.toString());
             KeyFactory kf;
             try {
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() TRY RSA");
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() TRY RSA");
                 kf = KeyFactory.getInstance("RSA", "BC");
                 key = kf.generatePublic(spec);
             } catch (NoSuchProviderException ex) {
                 try {
-                    System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() TRY DSA");
+                    System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() TRY DSA");
                     kf = KeyFactory.getInstance("DSA", "BC");
                     key = kf.generatePublic(spec);
                 } catch (NoSuchProviderException ex2) {
                     try {
-                        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() TRY EC");
+                        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() TRY EC");
                         kf = KeyFactory.getInstance("EC", "BC");
                         key = kf.generatePublic(spec);
                     } catch (NoSuchProviderException ex3) {
-                        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getPublicKeyV2() MORE MORE");
+                        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPublicKeyV2() MORE MORE");
                     }
                 }
             }
@@ -1945,8 +1943,8 @@ public class CryptoGenerator {
 
         sigData = new CMSSignedData(sigData.getEncoded());
 
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isDetachedSignature());
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isCertificateManagementMessage());
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isDetachedSignature());
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isCertificateManagementMessage());
         return sigData;
     }
 
@@ -1974,8 +1972,8 @@ public class CryptoGenerator {
         CMSSignedData sigData = gen.generate(msg);
 
         sigData = new CMSSignedData(sigData.getEncoded());
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isDetachedSignature());
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isCertificateManagementMessage());
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isDetachedSignature());
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isCertificateManagementMessage());
         return sigData;
 
     }
@@ -2002,7 +2000,7 @@ public class CryptoGenerator {
 
             //  Write the file METHOD1
 //            ContentInfo ci = sigData.toASN1Structure();
-//            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.signFile()" + ci.getContent());
+//            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.signFile()" + ci.getContent());
 //            final File signedFile = new File(targetDirectory + targetFileName);
 //            final JcaPEMWriter publicPemWriter = new JcaPEMWriter(
 //                    new FileWriter(signedFile));
@@ -2146,7 +2144,7 @@ public class CryptoGenerator {
             }
         }
         String algo = pk.getAlgorithm();
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPrivateKey() DETECTED PK ALGO IS " + algo);
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPrivateKey() DETECTED PK ALGO IS " + algo);
 
         // Calculate SHA256
         HashCalculator hashc = new HashCalculator();
@@ -2225,21 +2223,21 @@ public class CryptoGenerator {
             BCRSAPublicKey pub = (BCRSAPublicKey) pubk;
             modulus = pub.getModulus().toString(16);
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException ex) {
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPublicKey()" + ex);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPublicKey()" + ex);
             try {
                 kf = KeyFactory.getInstance("DSA", "BC");
                 pubk = kf.generatePublic(spec);
                 BCDSAPublicKey pub = (BCDSAPublicKey) pubk;
                 modulus = pub.getY().toString(16);
             } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException ex2) {
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPublicKey()" + ex2);
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPublicKey()" + ex2);
                 try {
                     kf = KeyFactory.getInstance("EC", "BC");
                     pubk = kf.generatePublic(spec);
                     BCECPublicKey pub = (BCECPublicKey) pubk;
                     modulus = pub.getW().toString();
                 } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException ex3) {
-                    System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPublicKey()" + ex3);
+                    System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPublicKey()" + ex3);
                 }
             }
         }
@@ -2247,9 +2245,9 @@ public class CryptoGenerator {
         if (pubk == null) {
             throw new EnigmaException(pubFile + " is ruined.");
         }
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPublicKey() MODULUS IS " + modulus);
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPublicKey() MODULUS IS " + modulus);
         String algo = pubk.getAlgorithm();
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.importPublicKey() DETECTED PUBK ALGO IS " + algo);
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.importPublicKey() DETECTED PUBK ALGO IS " + algo);
 
         // Calculate SHA256
         HashCalculator hashc = new HashCalculator();
@@ -2460,7 +2458,7 @@ public class CryptoGenerator {
             publicPemWriter.writeObject(outDatas);
             publicPemWriter.flush();
             publicPemWriter.close();*/
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + cmsEnvelopedData.toASN1Structure());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.cipherFile()" + cmsEnvelopedData.toASN1Structure());
 
             return "File " + outputFilename + " successfuly encrypted.";
 
@@ -2504,7 +2502,7 @@ public class CryptoGenerator {
                 try ( FileOutputStream outputStream = new FileOutputStream(decipheredFile)) {
                     outputStream.write(decryptedData);
                 }
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + new String(decryptedData));
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.cipherFile()" + new String(decryptedData));
                 return "File " + outputFilename + " successfuly decrypted.";
             }
         } catch (EnigmaException | CMSException | IOException ex) {
@@ -2545,7 +2543,7 @@ public class CryptoGenerator {
                 try ( FileOutputStream outputStream = new FileOutputStream(decipheredFile)) {
                     outputStream.write(decryptedData);
                 }
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.cipherFile()" + decryptedData);
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.cipherFile()" + decryptedData);
                 return "File " + outputFilename + " successfuly decrypted.";
             }
         } catch (EnigmaException | CMSException | IOException ex) {
@@ -2566,7 +2564,7 @@ public class CryptoGenerator {
         base64 = base64.replace("-----ENDPKCS7-----", "");
         base64 = base64.replace("-----BEGINPKCS#7SIGNEDDATA-----", "");
         base64 = base64.replace("-----ENDPKCS#7SIGNEDDATA-----", "");
-        System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.removeDelimiters() >>>>>>>>>>>>>> " + base64);
+        System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.removeDelimiters() >>>>>>>>>>>>>> " + base64);
         return base64.getBytes();
     }
 
@@ -2574,13 +2572,13 @@ public class CryptoGenerator {
 
         //     Cipher cipher = Cipher.getInstance(algoCipher, "BC");
         Security.addProvider(new BouncyCastleProvider());
-        boolean verif = false;
+
         try {
 
             Path path = Paths.get(targetFile);
             byte[] data = Files.readAllBytes(path);
             data = removeDelimiters(data);
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile() DATAS:" + new String(data));
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.verifyFile() DATAS:" + new String(data));
             // Approach No.1 to verify detached signature with encapsulated data
             //sig is the Signature object
             CMSSignedData signedData = new CMSSignedData(Base64.decode(data));
@@ -2589,7 +2587,7 @@ public class CryptoGenerator {
             // Main verify block
             Store store = signedData.getCertificates();
             SignerInformationStore signers = signedData.getSignerInfos();
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile()" + signedData.getSignedContentTypeOID());
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.verifyFile()" + signedData.getSignedContentTypeOID());
 
             Collection c = signers.getSigners();
             Iterator it = c.iterator();
@@ -2602,14 +2600,14 @@ public class CryptoGenerator {
 
                 X509CertificateHolder certHolder = (X509CertificateHolder) certIt.next();
                 X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
-                System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile() CN:" + cert.getSubjectDN().getName());
+                System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.verifyFile() CN:" + cert.getSubjectDN().getName());
 
                 // Si contenu encapsulé alors renvoie les données
                 CMSProcessable sc = signedData.getSignedContent();
                 if (sc != null) {
                     dataS = (byte[]) sc.getContent();
                 }
-                // System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile() Signed Datas : " + new String(dataS));
+                // System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.verifyFile() Signed Datas : " + new String(dataS));
 
                 //get CA public key
                 // Create a X509 certificat
@@ -2623,34 +2621,23 @@ public class CryptoGenerator {
                 System.out.println("Verfication done successfully ");
 
                 if (signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert))) {
-                    verif = true;
+
                     return "File " + targetFile + " verified successfully.";
                 }
             }
         } catch (IOException | CMSException | CertificateEncodingException ex) {
             Logger.getLogger(CryptoGenerator.class
                     .getName()).log(Level.SEVERE, null, ex);
+            return "File " + targetFile + " verification failed." + ex.getMessage();
 
-        } catch (OperatorCreationException ex) {
+        } catch (OperatorCreationException | CertificateException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            return "File " + targetFile + " verification failed." + ex.getMessage();
 
-        } catch (CertificateException ex) {
-            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-
-//        } catch (NoSuchAlgorithmException ex) {
-//            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (InvalidKeyException ex) {
-//            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (NoSuchProviderException ex) {
-//            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (SignatureException ex) {
-//            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
-
         try {
             Path path = Paths.get(targetFile);
             byte[] data = Files.readAllBytes(path);
-            //  data = removeDelimiters(data);
 
             // Approach No.2 to verify detached signature without encapsulated data, just the detached signature
             //Create a CMSProcessable object, specify any encoding, I have used mine 
@@ -2676,22 +2663,15 @@ public class CryptoGenerator {
                 X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 
                 if (signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert))) {
-                    verif = true;
                     return "File " + outputFilename + " verified successfully.";
                 }
             }
-
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile()" + verif);
-
             return "File " + targetFile + " verification failed.";
         } catch (IOException | CMSException | CertificateEncodingException ex) {
             Logger.getLogger(CryptoGenerator.class
                     .getName()).log(Level.SEVERE, null, ex);
             return "File " + targetFile + " verification failed." + ex.getMessage();
-        } catch (OperatorCreationException ex) {
-            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-            return "File " + targetFile + " verification failed." + ex.getMessage();
-        } catch (CertificateException ex) {
+        } catch (OperatorCreationException | CertificateException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
             return "File " + targetFile + " verification failed." + ex.getMessage();
         }
@@ -2737,7 +2717,7 @@ public class CryptoGenerator {
                 }
             }
 
-            System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.verifyFile()" + verif);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.verifyFile()" + verif);
 
             return "File " + targetFile + " verified successfully.";
 

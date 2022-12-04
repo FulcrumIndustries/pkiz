@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.database.definition;
 
 import java.io.InputStream;
@@ -11,8 +6,7 @@ import java.security.PublicKey;
 import org.bouncycastle.util.io.pem.PemObject;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class EnigmaKey {
     //CREATE TABLE X509KEYS (ID_KEY INTEGER PRIMARY KEY,	KEYNAME VARCHAR(200), KEYTYPE INTEGER,KEYFILE BLOB, ALGO VARCHAR(64), SHA256  VARCHAR(256),ID_ASSOCIATED_KEY INTEGER, PASSWORD  VARCHAR(64));

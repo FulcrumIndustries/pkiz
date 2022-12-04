@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.database.definition;
 
 import java.io.InputStream;
@@ -14,8 +9,7 @@ import java.util.Enumeration;
 import javax.swing.tree.TreeNode;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class EnigmaCertificate implements TreeNode, Comparable {
 
@@ -243,7 +237,7 @@ public class EnigmaCertificate implements TreeNode, Comparable {
     }
 
     public boolean equals(EnigmaCertificate certt) {
-        System.out.println("org.caulfield.enigma.database.EnigmaCertificate.equals()");
+        System.out.println("org.caulfield.pkiz.database.EnigmaCertificate.equals()");
         return certt.getCertname().equals(this.getCertname());
     }
 
@@ -259,7 +253,7 @@ public class EnigmaCertificate implements TreeNode, Comparable {
 
     @Override
     public TreeNode getParent() {
-        System.out.println("org.caulfield.enigma.database.EnigmaCertificate.getParent()");
+        System.out.println("org.caulfield.pkiz.database.EnigmaCertificate.getParent()");
         return parent;
     }
 
@@ -306,7 +300,7 @@ public class EnigmaCertificate implements TreeNode, Comparable {
 
     @Override
     public int compareTo(Object t) {
-        System.out.println("org.caulfield.enigma.database.EnigmaCertificate.compareTo()");
+        System.out.println("org.caulfield.pkiz.database.EnigmaCertificate.compareTo()");
         return this.certname.equals(((EnigmaCertificate) t).getCertname()) ? 0 : -1;
     }
 

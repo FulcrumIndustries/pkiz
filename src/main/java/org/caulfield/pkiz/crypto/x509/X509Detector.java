@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509;
 
 import org.caulfield.pkiz.crypto.x509.reader.CSRReader;
@@ -14,8 +9,7 @@ import org.caulfield.pkiz.crypto.x509.reader.PKCS12Reader;
 import java.io.File;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class X509Detector {
 

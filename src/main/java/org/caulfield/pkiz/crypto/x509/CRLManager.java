@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509;
 
 import java.io.ByteArrayInputStream;
@@ -53,7 +48,6 @@ import org.caulfield.pkiz.database.definition.EnigmaCertificate;
 import org.caulfield.pkiz.stream.StreamManager;
 
 /**
- *
  * @author pbakhtiari
  */
 public class CRLManager {
@@ -88,9 +82,9 @@ public class CRLManager {
                 baos.write(buffer, 0, len);
             }
             baos.flush();
-            // System.out.println("org.caulfield.enigma.crypto.x509.CRLManager.revokeCert()" + baos.toString());
+            // System.out.println("org.caulfield.pkiz.crypto.x509.CRLManager.revokeCert()" + baos.toString());
             String crlstr = baos.toString().replace("-----BEGIN X509 CRL-----", "").replace("-----END X509 CRL-----", "");
-            System.out.println("org.caulfield.enigma.crypto.x509.CRLManager.revokeCert()" + crlstr);
+            System.out.println("org.caulfield.pkiz.crypto.x509.CRLManager.revokeCert()" + crlstr);
             InputStream currentCRLstream = new ByteArrayInputStream(baos.toString().getBytes(StandardCharsets.UTF_8.name()));
             // Open new InputStreams using the recorded bytes
             // Can be repeated as many times as you wish

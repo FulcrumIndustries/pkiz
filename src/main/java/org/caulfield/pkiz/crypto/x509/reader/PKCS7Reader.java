@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509.reader;
 
 import java.io.BufferedReader;
@@ -24,8 +19,7 @@ import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.util.Store;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class PKCS7Reader {
 
@@ -120,8 +114,8 @@ public class PKCS7Reader {
                 CMSProcessable sc = signature.getSignedContent();
                 data = (byte[]) sc.getContent();
                 out = cert.getSubject().toString();
-                System.out.println("org.caulfield.enigma.crypto.x509.CSRReader.getCSR()" + cert.getSubject());
-                System.out.println("org.caulfield.enigma.crypto.x509.CSRReader.getCSR()" + data);
+                System.out.println("org.caulfield.pkiz.crypto.x509.CSRReader.getCSR()" + cert.getSubject());
+                System.out.println("org.caulfield.pkiz.crypto.x509.CSRReader.getCSR()" + data);
             }
         } catch (CMSException ex) {
             Logger.getLogger(PKCS7Reader.class.getName()).log(Level.SEVERE, null, ex);

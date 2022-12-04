@@ -9,7 +9,6 @@ import javax.swing.tree.TreeModel;
 import org.caulfield.pkiz.database.definition.EnigmaCertificate;
 
 /**
- *
  * @author pbakhtiari
  */
 public class CertificateTreeModel implements TreeModel {

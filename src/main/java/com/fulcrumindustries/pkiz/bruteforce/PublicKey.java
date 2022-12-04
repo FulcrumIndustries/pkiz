@@ -3,6 +3,9 @@ package com.fulcrumindustries.pkiz.bruteforce;
 import java.io.Serializable;
 import java.math.BigInteger;
 
+/**
+ * @author pbakhtiari
+ */
 public class PublicKey implements Serializable {
 
     public int keySize;

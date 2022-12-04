@@ -1,12 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package org.caulfield.pkiz.crypto;
 
 /**
- *
- * @author phili
+ * @author pbakhtiari
  */
 public final class CertType {
     public static final int CA = 0;

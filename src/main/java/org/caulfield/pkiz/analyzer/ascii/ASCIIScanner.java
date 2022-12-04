@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.analyzer.ascii;
 
 import com.google.common.base.CharMatcher;
@@ -15,8 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class ASCIIScanner {
 

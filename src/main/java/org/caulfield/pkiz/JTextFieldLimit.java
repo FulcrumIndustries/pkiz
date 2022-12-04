@@ -9,8 +9,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
 /**
- *
- * @author phili
+ * @author pbakhtiari
  */
 public class JTextFieldLimit extends PlainDocument {
   private int limit;

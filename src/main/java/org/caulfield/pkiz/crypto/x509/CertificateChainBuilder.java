@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509;
 
 import java.io.ByteArrayInputStream;
@@ -27,7 +22,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
-import java.util.Random;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERSequence;
@@ -51,11 +45,9 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.bouncycastle.operator.AADProcessor;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.caulfield.pkiz.crypto.CertType;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
@@ -66,7 +58,6 @@ import org.caulfield.pkiz.database.definition.EnigmaKey;
 import org.caulfield.pkiz.stream.StreamManager;
 
 /**
- *
  * @author pbakhtiari
  */
 public class CertificateChainBuilder {

@@ -1,14 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.export;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,11 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.caulfield.pkiz.database.definition.CryptoDAO;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class ExportManager {
 
@@ -72,7 +70,7 @@ public class ExportManager {
             sbPEM.append(sPemFormated.replaceAll("(.{64})", "$1" + System.getProperty("line.separator")));
             sbPEM.append(System.getProperty("line.separator"));
             sbPEM.append("-----END CERTIFICATE-----");
-            System.out.println("org.caulfield.enigma.export.ExportManager.convertStreamToPEM()" + sbPEM.toString());
+            System.out.println("org.caulfield.pkiz.export.ExportManager.convertStreamToPEM()" + sbPEM.toString());
             pemStream = new ByteArrayInputStream(sbPEM.toString().getBytes(StandardCharsets.UTF_8.name()));
             return pemStream;
         } catch (IOException ex) {
@@ -192,6 +190,26 @@ public class ExportManager {
             outStream.flush();
             outStream.close();
             return "Certificate converted successfully as " + targetFile;
+        } catch (IOException ex) {
+            Logger.getLogger(ExportManager.class.getName()).log(Level.SEVERE, null, ex);
+            return "Certificate convertion failed.";
+        }
+    }
+
+    public String ToPem(String fileName) {
+        try {
+            InputStream derStream = new FileInputStream(new File(fileName));
+            byte[] buffer = new byte[derStream.available()];
+            derStream.read(buffer);
+            String resultFileName = fileName.substring(0, fileName.indexOf(".")) + ".pem";
+            FileWriter fw = new FileWriter(resultFileName);
+            //fw.write(sbPEM.toString());
+            PemWriter pem = new PemWriter(fw);
+            PemObjectGenerator pg = new PemObject("CERTIFICATE", buffer);
+            pem.writeObject(pg);
+            // force the pem write to flush it's data - kind of abnoxious you have to do that
+            pem.flush();
+            return "Certificate converted successfully as " + resultFileName;
         } catch (IOException ex) {
             Logger.getLogger(ExportManager.class.getName()).log(Level.SEVERE, null, ex);
             return "Certificate convertion failed.";

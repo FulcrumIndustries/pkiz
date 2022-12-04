@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.database.definition;
 
 import java.io.File;
@@ -21,13 +16,12 @@ import org.hsqldb.cmdline.SqlFile;
 import org.hsqldb.cmdline.SqlToolError;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class HSQLLoader {
 
     private Connection connexion;
-    private String databaseName = "enigma-database";
+    private final String databaseName = "pkiz-database";
 
     public HSQLLoader() {
         loadConnection();
@@ -59,28 +53,13 @@ public class HSQLLoader {
         if (connexion == null) {
             loadConnection();
         }
-        Statement statement = connexion.createStatement();
-        ResultSet set = set = statement.executeQuery(query);
-        statement.close();
+        ResultSet set;
+        try (Statement statement = connexion.createStatement()) {
+            set = set = statement.executeQuery(query);
+        }
         return set;
     }
-//
-//    public static void main(String[] args) {
-//        HSQLLoader ldd = new HSQLLoader();
-//        try {
-//            ResultSet f = ldd.runQuery("select * from certificates");
-//            while (f.next()) {
-//                System.out.println("org.caulfield.enigma.database.HSQLLoader.main()" + f.getInt("ID_CERT") + f.getString("CN"));
-//            }
-//            ldd.closeConnexion();
-//        } catch (SQLException ex) {
-//            Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
-//            ldd.closeConnexion();
-//        }
-//
-////        fz = ldd.runUpdate("CREATE TABLE Kappa (colonne1 INT , colonne2 INT)");
-//    }
-
+    
     private boolean baseDoesNotExist() {
         boolean exists = true;
         try {
@@ -101,30 +80,22 @@ public class HSQLLoader {
             if (baseDoesNotExist()) {
                 initDatabase();
             }
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SQLException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | SQLException ex) {
             Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void initDatabase() {
         try {
-            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("enigma.sql");
+            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("pkiz.sql");
             if (inputStream == null) {
-                System.out.println("org.caulfield.enigma.database.HSQLLoader.initDatabase() reinstall Enigma - base corrupted");
+                System.out.println("org.caulfield.pkiz.database.HSQLLoader.initDatabase() reinstall PKIZ - base corrupted");
             }
             SqlFile sqlFile = new SqlFile(new InputStreamReader(inputStream), "init", System.out, "UTF-8", false, new File("build"));
             sqlFile.setConnection(connexion);
             sqlFile.execute();
             sqlFile.closeReader();
-        } catch (IOException ex) {
-            Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SqlToolError ex) {
+        } catch (IOException | SqlToolError ex) {
             Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SQLException ex) {
             Logger.getLogger(HSQLLoader.class.getName()).log(Level.SEVERE, null, ex);

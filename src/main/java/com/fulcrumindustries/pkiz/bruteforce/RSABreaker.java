@@ -11,7 +11,6 @@ import org.caulfield.pkiz.crypto.EnigmaException;
 import org.openide.util.Exceptions;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-//import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -47,73 +46,6 @@ import java.util.Base64;
 public class RSABreaker {
 
     public static void main(String[] args) throws Exception {
-//        Options options = new Options();
-//        options.addOption(Option.builder("g").longOpt("generateKeys").hasArg().numberOfArgs(1).argName("key_size").desc("Generate keys").required(false).build());
-//        options.addOption(Option.builder("i").longOpt("input").hasArg().numberOfArgs(1).argName("input_file").desc("Input file for processing").build());
-//        options.addOption(Option.builder("e").longOpt("encrypt").hasArg().numberOfArgs(1).argName("pub_key_file").desc("Encrypt file").build());
-//        options.addOption(Option.builder("d").longOpt("decrypt").hasArg().numberOfArgs(1).argName("pri_key_file").desc("Decrypt file").build());
-//        options.addOption(Option.builder("b").longOpt("brute").hasArg().numberOfArgs(1).argName("public_key_file").desc("Break code with brute-force").required(false).build());
-//        options.addOption(Option.builder("p").longOpt("pollard").hasArg().numberOfArgs(1).argName("public_key_file").desc("Break code with pollard-force").required(false).build());
-//        options.addOption(Option.builder("o").longOpt("output").required(false).hasArg().numberOfArgs(1).argName("output_file").desc("Output file").build());
-//        options.addOption(Option.builder("s").longOpt("samples").required(false).hasArg().numberOfArgs(1).argName("samples").desc("Samples separated by comma").build());
-//        options.addOption(Option.builder("t").longOpt("testTrials").required(false).hasArg().numberOfArgs(1).argName("trials").desc("Trials number").build());
-//        options.addOption(Option.builder("a").longOpt("algorithm").required(false).hasArg().numberOfArgs(1).argName("algorithm").desc("Algorithm brute or pollard").build());
-//
-//        CommandLineParser parser = new DefaultParser();
-//        CommandLine cmd = parser.parse(options, args);
-//
-//        if (cmd.hasOption("g")) {
-//            int keySize = Integer.valueOf(cmd.getOptionValue("g"));
-//            generateKeyFiles(keySize);
-//        } else if (cmd.hasOption("e") && cmd.hasOption("i")) {
-//            String inputFile = cmd.getOptionValue("i");
-//            String publicKey = cmd.getOptionValue("e");
-//            String outputDir = "encrypted_message.rsa";
-//            if (cmd.hasOption("o")) {
-//                outputDir = cmd.getOptionValue("o");
-//            }
-//            encrypt(inputFile, publicKey, outputDir);
-//        } else if (cmd.hasOption("d") && cmd.hasOption("i")) {
-//            String inputFile = cmd.getOptionValue("i");
-//            String decryptKey = cmd.getOptionValue("d");
-//            String outputDir = "original.txt";
-//            if (cmd.hasOption("o")) {
-//                outputDir = cmd.getOptionValue("o");
-//            }
-//            decrypt(inputFile, decryptKey, outputDir);
-//        } else if (cmd.hasOption("b") && cmd.hasOption("i")) {
-//            String inputFile = cmd.getOptionValue("i");
-//            String publicKey = cmd.getOptionValue("b");
-//            String outputDir = "brute_force.txt";
-//            if (cmd.hasOption("o")) {
-//                outputDir = cmd.getOptionValue("o");
-//            }
-//            bruteForce(inputFile, publicKey, outputDir);
-//        } else if (cmd.hasOption("p") && cmd.hasOption("i")) {
-//            String inputFile = cmd.getOptionValue("i");
-//            String publicKey = cmd.getOptionValue("p");
-//            String outputDir = "brute_force.txt";
-//            if (cmd.hasOption("o")) {
-//                outputDir = cmd.getOptionValue("o");
-//            }
-//            pollardForce(inputFile, publicKey, outputDir);
-//        } else if (cmd.hasOption("s") && cmd.hasOption("t") && cmd.hasOption("i") && cmd.hasOption("a")) {
-//            int trials = Integer.valueOf(cmd.getOptionValue("t"));
-//            String samples[] = cmd.getOptionValue("s").split(",");
-//            int keySizes[] = new int[samples.length];
-//            for (int i = 0; i < samples.length; i++) {
-//                keySizes[i] = Integer.valueOf(samples[i]);
-//            }
-//            String inputFile = cmd.getOptionValue("i");
-//            String outputDir = "results.csv";
-//            if (cmd.hasOption("o")) {
-//                outputDir = cmd.getOptionValue("o");
-//            }
-//            TestExecutor.executeBruteForce(inputFile, outputDir, keySizes, trials, cmd.getOptionValue("a"));
-//        } else {
-//            HelpFormatter helpFormatter = new HelpFormatter();
-//            helpFormatter.printHelp("rsa", options);
-//        }
         String publicKey = "D:/TEST/smallkey.key";
         String inputFile = "C:/Users/phili/OneDrive/Documents/GitHub/pkiz/smalltest.txt.enc";
         String solved = PollardForce(inputFile, publicKey, inputFile + ".out");
@@ -208,16 +140,13 @@ public class RSABreaker {
             System.out.println("EVAL:" + eval);
         } catch (EnigmaException ex) {
             Exceptions.printStackTrace(ex);
-            //System.out.print("Crashed : " + dd.getMessage() + " " + dd.toString());
         }
         return eval;
     }
 
     public static String PollardForce(String publicKey, String inputFile, String outputFile) {
-        //String publicKey = "D:/TEST/key.key";
-        //String inputFile = "C:/Users/phili/OneDrive/Documents/GitHub/pkiz/test.txt.enc";
+
         String solution = "";
-        //String outputFile = inputFile + ".solved";
         try {
             CryptoGenerator cg = new CryptoGenerator();
             java.security.PublicKey pub = cg.getPublicKeyV2(publicKey);
@@ -235,11 +164,8 @@ public class RSABreaker {
             encryptedMessage.crypto = FileUtils.readFileToString(f, "UTF-8");
             solution = PollardForce.solve(brutePub, encryptedMessage.crypto);
             FileUtils.writeStringToFile(new File(outputFile), solution, "UTF-8");
-            //FileUtils.write(Paths.get(outputFile).toFile(), solution, "UTF-8");
-
         } catch (EnigmaException | IOException ex) {
             Exceptions.printStackTrace(ex);
-            //System.out.print("Crashed : " + dd.getMessage() + " " + dd.toString());
         }
         return solution;
     }

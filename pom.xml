@@ -128,10 +128,10 @@
                 <configuration>
                     <executable>java</executable>
                     <arguments>
-                        <argument>-splash:src/main/resources/enigma500.png</argument>
+                        <argument>-splash:src/main/resources/brain.gif</argument>
                         <argument>-classpath</argument>
                         <classpath />
-                        <argument>org.caulfield.enigma.EnigmaIHM</argument>
+                        <argument>org.caulfield.pkiz.PKIZ</argument>
                     </arguments>
                 </configuration>
             </plugin>
@@ -148,7 +148,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.caulfield.enigma.EnigmaIHM
+                                        org.caulfield.pkiz.PKIZ
                                     </mainClass>
                                 </manifest>
                             </archive>

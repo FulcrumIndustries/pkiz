@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.crypto.x509.reader;
 
 import org.caulfield.pkiz.crypto.x509.reader.PublicKeyReader;
@@ -14,15 +9,19 @@ import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.xml.bind.DatatypeConverter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Security;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class CSRReader {
 
@@ -31,7 +30,10 @@ public class CSRReader {
             = "-----BEGIN CERTIFICATE REQUEST"; //$NON-NLS-1$
     public static final String P10_END_MARKER
             = "-----END CERTIFICATE REQUEST"; //$NON-NLS-1$
-
+    public static final String P10_BEGIN_ALTERNATE_MARKER
+            = "-----BEGIN X509 CRL"; //$NON-NLS-1$
+    public static final String P10_END_ALTERNATE_MARKER
+            = "-----END X509 CRL"; //$NON-NLS-1$
     protected final String fileName;
 
     /**
@@ -63,12 +65,12 @@ public class CSRReader {
             boolean inKey = false;
             for (String line = br.readLine(); line != null; line = br.readLine()) {
                 if (!inKey) {
-                    if (line.startsWith(P10_BEGIN_MARKER)) {
+                    if (line.startsWith(P10_BEGIN_MARKER) || line.startsWith(P10_BEGIN_ALTERNATE_MARKER)) {
                         inKey = true;
                     }
                     continue;
                 } else {
-                    if (line.startsWith(P10_END_MARKER)) {
+                    if (line.startsWith(P10_END_MARKER) || line.startsWith(P10_END_ALTERNATE_MARKER)) {
                         inKey = false;
                         break;
                     }
@@ -79,13 +81,41 @@ public class CSRReader {
             byte[] encoded = DatatypeConverter.parseBase64Binary(builder.toString());
             JcaPKCS10CertificationRequest p10Object = new JcaPKCS10CertificationRequest(encoded);
 
-            System.out.println("org.caulfield.enigma.crypto.x509.CSRReader.getCSR()" + p10Object.getSubject());
+            System.out.println("org.caulfield.pkiz.crypto.x509.CSRReader.getCSR()" + p10Object.getSubject());
             return "Certificate signing request detected.";
 
         } catch (IOException | NullPointerException ex) {
+
+            // Try the binary route ?
             Logger.getLogger(PublicKeyReader.class.getName()).log(Level.SEVERE, null, ex);
             return "Not a certificate signing request";
         }
+    }
+
+    private String convertPemToPKCS10CertificationRequest() {
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        String s = "";
+        try {
+            PKCS10CertificationRequest csr = new PKCS10CertificationRequest(Files.readAllBytes(Paths.get(fileName)));
+            s = csr.getSubject().toString();
+//            ByteArrayInputStream pemStream = null;
+            //          pemStream = new ByteArrayInputStream(pem.getBytes("UTF-8"));
+            //        Reader pemReader = new BufferedReader(new InputStreamReader(pemStream));
+            //      PEMParser pemParser = new PEMParser(pemReader);
+            //    Object parsedObj = pemParser.readObject();
+            //  System.out.println("PemParser returned: " + parsedObj);
+            //if (parsedObj instanceof PKCS10CertificationRequest) {
+            //  csr = (PKCS10CertificationRequest) parsedObj;
+            // }
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(CSRReader.class.getName()).log(Level.SEVERE, null, ex);
+            return "Not a certificate signing request";
+        } catch (IOException ex) {
+            Logger.getLogger(CSRReader.class.getName()).log(Level.SEVERE, null, ex);
+            return "Not a certificate signing request";
+        }
+
+        return "Certificate signing request detected " + s;
     }
     private static final String COUNTRY = "2.5.4.6";
     private static final String STATE = "2.5.4.8";
@@ -105,7 +135,7 @@ public class CSRReader {
         if (x500Name.getRDNs(BCStyle.EmailAddress).length > 0) {
             compname.append(x500Name.getRDNs(BCStyle.EmailAddress)[0]).append("\n");
         }
-        compname.append("COUNTRY: " + getX500Field(COUNTRY, x500Name)).append("\n");
+        compname.append("COUNTRY: ").append(getX500Field(COUNTRY, x500Name)).append("\n");
         compname.append("STATE: " + getX500Field(STATE, x500Name)).append("\n");
         compname.append("LOCALE: " + getX500Field(LOCALE, x500Name)).append("\n");
         compname.append("ORGANIZATION: " + getX500Field(ORGANIZATION, x500Name)).append("\n");

@@ -12,8 +12,7 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class CertificateTableCellRenderer extends DefaultTableCellRenderer {
 

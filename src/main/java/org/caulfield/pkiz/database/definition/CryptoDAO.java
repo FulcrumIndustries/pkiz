@@ -1,18 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.caulfield.pkiz.database.definition;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -21,14 +13,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.IOUtils;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
-import org.hsqldb.util.DatabaseManagerSwing;
-import org.openide.util.Exceptions;
 
 /**
- *
- * @author Ender
+ * @author pbakhtiari
  */
 public class CryptoDAO {
 
@@ -43,7 +31,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("KEYFILE");
             }
-            //  System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -61,7 +49,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getString("PASSWORD");
             }
-            //System.out.println("org.caulfield.enigma.crypto.CryptoGenerator.getKeyPasswordFromDB()" + in.toString());
+            //System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getKeyPasswordFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -176,7 +164,7 @@ public class CryptoDAO {
             while (childs.next()) {
                 in.getChilds().add(getEnigmaCertFromDB(childs.getInt("ID_CERT"), in));
             }
-            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.pkiz.database.CryptoDAO.getCertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -194,7 +182,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("CRLFILE");
             }
-            //      System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLwithidCACertFromDB()" + in.toString());
+            //      System.out.println("org.caulfield.pkiz.database.CryptoDAO.getCRLwithidCACertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -212,7 +200,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("CRLFILE");
             }
-            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLFromDB()" + in.toString());
+            //  System.out.println("org.caulfield.pkiz.database.CryptoDAO.getCRLFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -235,7 +223,7 @@ public class CryptoDAO {
                 crl.setEnddate(ff.getDate("ENDDATE"));
                 enigmaCRLList.add(crl);
             }
-            //  System.out.println("org.caulfield.enigma.database.CryptoDAO.getCRLforCertFromDB()");
+            //  System.out.println("org.caulfield.pkiz.database.CryptoDAO.getCRLforCertFromDB()");
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -253,7 +241,7 @@ public class CryptoDAO {
             if (ff.next()) {
                 in = ff.getBinaryStream("CERTFILE");
             }
-            //   System.out.println("org.caulfield.enigma.database.CryptoDAO.getCertFromDB()" + in.toString());
+            //   System.out.println("org.caulfield.pkiz.database.CryptoDAO.getCertFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -513,7 +501,7 @@ public class CryptoDAO {
                 crl.setStartdate(ff.getDate("STARTDATE"));
                 crl.setEnddate(ff.getDate("ENDDATE"));
             }
-            //   System.out.println("org.caulfield.enigma.database.CryptoDAO.getEnigmaCRLwithidCACertFromDB()");
+            //   System.out.println("org.caulfield.pkiz.database.CryptoDAO.getEnigmaCRLwithidCACertFromDB()");
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
