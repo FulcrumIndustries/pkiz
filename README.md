@@ -2,6 +2,8 @@
 
 A multi-purpose cryptography tool designed to make things simple for users unfamiliar with the involved concepts.
 
+!\[JAVA\](https://badgen.net/badge/java/1.7%2B?icon=java)
+
 ## Getting Started
 
 ### Dependencies
