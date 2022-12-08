@@ -1,6 +1,7 @@
 # PKIZ
 
 A multi-purpose cryptography tool designed to make things simple for users unfamiliar with the involved concepts.
+The initial release is still experimental and security will be increased over time.
 
 [![my badge](https://badgen.net/badge/Java/1.8%2B/blue?icon=java)](https://github.com/FulcrumIndustries/pkiz)
 [![my badge](https://badgen.net/badge/License/MIT/black?icon=license)](https://github.com/FulcrumIndustries/pkiz)
