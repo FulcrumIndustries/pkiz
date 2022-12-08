@@ -139,7 +139,7 @@ public class PKIZ extends javax.swing.JFrame {
             jComboBoxSignSignerCert.addItem(AC);
         }
 
-        jTextFieldGlobalOutput.setText(System.getProperty("user.dir") + "\\");
+        jTextFieldGlobalOutput.setText(System.getProperty("user.dir") + "\\generated\\");
 
         jComboBoxAC.addItem("None");
         for (String AC : acm.getFullACList()) {
@@ -4645,7 +4645,9 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void jButtonBuildPKCS12MakerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBuildPKCS12MakerActionPerformed
         // TODO add your handling code here:
-
+        CryptoGenerator cg = new CryptoGenerator();
+        String outRet = cg.buildPKCS12fromCertAndKey((String) jComboBoxPKCS12MakerCert.getSelectedItem(), (String) jComboBoxPKCS12MakerPK.getSelectedItem(), new String (jPasswordFieldPKCS12Maker.getPassword()), jTextFieldGlobalOutput.getText());
+        ((DefaultListModel) jListEvents.getModel()).addElement(outRet);
     }//GEN-LAST:event_jButtonBuildPKCS12MakerActionPerformed
 
     private void jComboBoxPKCS12MakerPKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxPKCS12MakerPKActionPerformed
@@ -4902,7 +4904,7 @@ public class PKIZ extends javax.swing.JFrame {
             // nom du fichier choisi
             // jFileChooser1.getSelectedFile().getName();
             // chemin absolu du fichier choisi
-            jTextFieldGlobalOutput.setText(jFileChooserDirectoriesOnly.getSelectedFile().getAbsolutePath() + "\\");
+            jTextFieldGlobalOutput.setText(jFileChooserDirectoriesOnly.getSelectedFile().getAbsolutePath());
         }
     }// GEN-LAST:event_jButtonBrowseGlobalOutputActionPerformed
 

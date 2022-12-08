@@ -54,12 +54,12 @@ public class HSQLLoader {
             loadConnection();
         }
         ResultSet set;
-        try (Statement statement = connexion.createStatement()) {
+        try ( Statement statement = connexion.createStatement()) {
             set = set = statement.executeQuery(query);
         }
         return set;
     }
-    
+
     private boolean baseDoesNotExist() {
         boolean exists = true;
         try {
@@ -102,6 +102,7 @@ public class HSQLLoader {
             System.out.println("Base already exists !");
         }
         // Create ROOT objects
+        ObjectsInitializer.createGeneratedDir();
         ObjectsInitializer.createLocalObjects();
         System.out.println("Build successful !");
 

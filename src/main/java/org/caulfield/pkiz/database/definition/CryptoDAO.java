@@ -34,7 +34,7 @@ public class CryptoDAO {
             //  System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
 
         } catch (SQLException ex) {
-            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, "Couldn't load key "+idX509Key, ex);
 
         }
         return in;

@@ -432,9 +432,9 @@ public class CryptoGenerator {
                     key = converter.getPrivateKey(info);
                     System.out.println("org.caulfield.pkiz.crypto.x509.PrivateKeyReader.getPrivateKey()" + info.parsePrivateKey().toASN1Primitive().toString());
                 } catch (OperatorCreationException ex) {
-                    Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, ex.toString(), ex);
                 } catch (PKCSException ex) {
-                    Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, null, ex + "\n possible bad password");
+                    Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, "Bad password? : "+ex.toString(), ex + "\n possible bad password");
                 }
 
             } else if (isRSAKey) {
@@ -508,10 +508,10 @@ public class CryptoGenerator {
                         }
                     }
                 }
-
             }
         } catch (IOException ex) {
             Logger.getLogger(PrivateKeyReader.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getPrivateKey() MORE TRACE" + ex.toString());
         }
         return key;
     }
@@ -1031,6 +1031,10 @@ public class CryptoGenerator {
         return Integer.valueOf(comboText.substring(0, comboText.indexOf(".")));
     }
 
+    public String getKeyNameFromComboBox(String comboText) {
+        return comboText.substring(comboText.indexOf(".") + 2, comboText.length());
+    }
+
     public Integer getKeyIDFromParentComboBox(String comboText) {
         return Integer.valueOf(comboText.substring(0, comboText.indexOf(".")));
     }
@@ -1131,7 +1135,7 @@ public class CryptoGenerator {
                     JceOpenSSLPKCS8EncryptorBuilder encryptorBuilder = new JceOpenSSLPKCS8EncryptorBuilder(
                             PKCS8Generator.PBE_SHA1_3DES);
                     encryptorBuilder.setRandom(new SecureRandom());
-                    encryptorBuilder.setPasssword(keyPassword.toCharArray());
+                    encryptorBuilder.setPassword(keyPassword.toCharArray());
                     OutputEncryptor oe = encryptorBuilder.build();
                     JcaPKCS8Generator gen = new JcaPKCS8Generator(privkey, oe);
                     PemObject obj = gen.generate();
@@ -1607,8 +1611,7 @@ public class CryptoGenerator {
 
     public boolean quickCheckPrivateKey(File privateKeyFile) throws FileNotFoundException, IOException {
         File privateFile = privateKeyFile;
-        FileInputStream fis = new FileInputStream(privateFile);
-        BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(privateFile)));
         return br.readLine().contains("PRIVATE");
     }
 
@@ -1976,6 +1979,35 @@ public class CryptoGenerator {
         System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.testCMSAlgorithmProtection()" + sigData.isCertificateManagementMessage());
         return sigData;
 
+    }
+
+    public String buildPKCS12fromCertAndKey(String certificateName, String privateKeyFilename, String privateKeyPassword, String targetDirectory) {
+        //
+        // store the key and the certificate chain
+        //
+        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        String targetFilename = getKeyNameFromComboBox(certificateName) + ".p12";
+        try {
+
+            Integer idPrivateKey = getKeyIDFromComboBox(privateKeyFilename);
+            Integer idCert = getKeyIDFromComboBox(certificateName);
+            InputStream is = CryptoDAO.getKeyFromDB(idPrivateKey);
+            PrivateKey pk = getPrivateKey(is, privateKeyPassword);
+            InputStream isc = CryptoDAO.getCertFromDB(idCert);
+            Certificate certificate = getCertificate(isc);
+            KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+            store.load(null, null);
+            store.setCertificateEntry("PublicCert", certificate);
+            Certificate[] chain = {certificate};
+            store.setKeyEntry("PrivateKey", pk, privateKeyPassword.toCharArray(), chain);
+            FileOutputStream fOut = new FileOutputStream(targetDirectory + targetFilename);
+            store.store(fOut, privateKeyPassword.toCharArray());
+            fOut.close();
+        } catch (KeyStoreException | NoSuchProviderException | IOException | NoSuchAlgorithmException | CertificateException | EnigmaException ex) {
+            Exceptions.printStackTrace(ex);
+            return "PKCS12 failed to build : " + ex.toString();
+        }
+        return "PKCS12 built successfully : " + targetDirectory + targetFilename;
     }
 
     public String signFile(String targetFile, String privateKeyFilename, String privateKeyPassword, String targetDirectory, String targetFileName, String algorithm, String signerCertificate) {

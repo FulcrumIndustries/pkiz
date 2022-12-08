@@ -37,6 +37,7 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcmail-jdk15on</artifactId>
             <version>1.70</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -105,6 +106,16 @@
             <artifactId>AbsoluteLayout</artifactId>
             <version>RELEASE150</version>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
     </dependencies>
     <build>  
         <resources>
@@ -134,6 +145,66 @@
                         <argument>org.caulfield.pkiz.PKIZ</argument>
                     </arguments>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>de.ntcomputer</groupId>
+                <artifactId>executable-packer-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <configuration>
+                    <mainClass>org.caulfield.pkiz.PKIZ</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>pack-executable-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <artifactSet>
+                        <excludes>
+                            <exclude>org.bouncycastle:*:*:*</exclude>
+                        </excludes>
+                    </artifactSet>
+                    <transformers>
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <manifestEntries>
+                                <Main-Class>org.caulfield.pkiz.PKIZ</Main-Class>
+                                <Class-Path>. ./lib/bcprov-ext-jdk15on-1.70.jar</Class-Path>
+                            </manifestEntries>
+                        </transformer>
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <manifestEntries>
+                                <Main-Class>org.caulfield.pkiz.PKIZ</Main-Class>
+                                <Class-Path>. ./lib/bcpkix-jdk15on-1.70.jar</Class-Path>
+                            </manifestEntries>
+                        </transformer>
+                        <transformer
+                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <manifestEntries>
+                                <Main-Class>org.caulfield.pkiz.PKIZ</Main-Class>
+                                <Class-Path>. ./lib/bcutil-jdk15on-1.70.jar</Class-Path>
+                            </manifestEntries>
+                        </transformer>
+                    </transformers>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <shadedClassifierName>fat</shadedClassifierName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

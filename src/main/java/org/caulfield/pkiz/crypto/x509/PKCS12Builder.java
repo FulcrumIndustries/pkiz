@@ -1,8 +1,18 @@
 package org.caulfield.pkiz.crypto.x509;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -35,6 +45,7 @@ import org.caulfield.pkiz.crypto.SHA1DigestCalculator;
 import org.caulfield.pkiz.crypto.hash.HashCalculator;
 import org.caulfield.pkiz.database.definition.CryptoDAO;
 import org.caulfield.pkiz.database.definition.EnigmaCertificate;
+import org.openide.util.Exceptions;
 
 /**
  * @author pbakhtiari
@@ -251,4 +262,6 @@ public class PKCS12Builder {
 
         return certificateHolder;
     }
+
+   
 }
