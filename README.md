@@ -2,7 +2,10 @@
 
 A multi-purpose cryptography tool designed to make things simple for users unfamiliar with the involved concepts.
 
-!\[JAVA\](https://badgen.net/badge/java/1.7%2B?icon=java)
+[![my badge](https://badgen.net/badge/Java/1.6%2B/blue?icon=java)](https://github.com/FulcrumIndustries/pkiz)
+[![my badge](https://badgen.net/badge/License/MIT/green?icon=license)](https://github.com/FulcrumIndustries/pkiz)
+[![my badge](https://badgen.net/badge/Bouncy%20Castle/1.70%2B/orange?icon=BC)](https://github.com/FulcrumIndustries/pkiz)
+[![my badge](https://badgen.net/badge/Release/1.00/yellow?icon=version)](https://github.com/FulcrumIndustries/pkiz)
 
 ## Getting Started
 
