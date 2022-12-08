@@ -31,7 +31,7 @@ java -jar PKIZ.jar
 
 ## Authors
 
-Philippe BAKHTIARI aka Fulcrum Industries.
+P. Bakhtiari (Fulcrum Industries).
 
 ## Version History
 
