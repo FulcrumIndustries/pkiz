@@ -19,7 +19,7 @@ public class ASCIIScanner {
         try {
             encoded = Files.readAllBytes(Paths.get(file.getAbsolutePath()));
             String datas = new String(encoded, Charset.defaultCharset());
-            return CharMatcher.ASCII.matchesAllOf(datas);
+            return CharMatcher.ascii().matchesAllOf(datas);
         } catch (IOException ex) {
             Logger.getLogger(ASCIIScanner.class.getName()).log(Level.SEVERE, null, ex);
             return false;
