@@ -5,6 +5,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +17,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import org.caulfield.pkiz.PBE.PBEManager;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
+import org.openide.util.Exceptions;
 
 /**
  * @author pbakhtiari
@@ -34,7 +43,7 @@ public class CryptoDAO {
             //  System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getKeyFromDB()" + in.toString());
 
         } catch (SQLException ex) {
-            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, "Couldn't load key "+idX509Key, ex);
+            Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, "Couldn't load key " + idX509Key, ex);
 
         }
         return in;
@@ -43,17 +52,22 @@ public class CryptoDAO {
     public static String getKeyPasswordFromDB(Integer idX509Key) {
         String in = null;
         try {
-            System.out.println("SELECT PASSWORD FROM X509KEYS WHERE ID_KEY=" + idX509Key);
-            ResultSet ff = sql.runQuery("SELECT PASSWORD FROM X509KEYS WHERE ID_KEY=" + idX509Key);
+            System.out.println("SELECT PASSWORD, SALT FROM X509KEYS WHERE ID_KEY=" + idX509Key);
+            ResultSet ff = sql.runQuery("SELECT PASSWORD, SALT FROM X509KEYS WHERE ID_KEY=" + idX509Key);
 
             if (ff.next()) {
-                in = ff.getString("PASSWORD");
+                String encryptedPassword = ff.getString("PASSWORD");
+                String salt = ff.getString("SALT");
+                byte[] res = PBEManager.decrypt(encryptedPassword.getBytes(), new String(PBEManager.getSubmittedPassword()), salt.getBytes(), 20);
+                in = new String(res);
             }
             //System.out.println("org.caulfield.pkiz.crypto.CryptoGenerator.getKeyPasswordFromDB()" + in.toString());
 
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
 
+        } catch (Exception ex) {
+            Exceptions.printStackTrace(ex);
         }
         return in;
     }
@@ -105,7 +119,11 @@ public class CryptoDAO {
                 in.setAlgo(cert.getString("ALGO"));
                 in.setSha256(cert.getString("SHA256"));
                 in.setId_associated_key(cert.getInt("ID_ASSOCIATED_KEY"));
-                in.setPassword(cert.getString("PASSWORD"));
+                String encryptedPassword = cert.getString("PASSWORD");
+                String salt = cert.getString("SALT");
+                byte[] res = PBEManager.decrypt(encryptedPassword.getBytes(), new String(PBEManager.getSubmittedPassword()), salt.getBytes(), 20);
+                String actualPWD = new String(res);
+                in.setPassword(actualPWD);
             }
             /* DatabaseManagerSwing manager = new DatabaseManagerSwing();
             manager.main();
@@ -114,6 +132,8 @@ public class CryptoDAO {
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
 
+        } catch (Exception ex) {
+            Exceptions.printStackTrace(ex);
         }
         return in;
     }
@@ -346,7 +366,7 @@ public class CryptoDAO {
 
     public static long insertKeyInDB(InputStream fileStream, String keyName, String algo, String realHash, Integer idAssociatedKey, boolean isPrivate, String password) {
         try {
-            PreparedStatement pst = sql.getConnection().prepareStatement("INSERT INTO X509KEYS (ID_KEY,KEYNAME,KEYTYPE,KEYFILE,ALGO,SHA256,ID_ASSOCIATED_KEY, PASSWORD) VALUES (NEXT VALUE FOR X509KEYS_SEQ,?,?,?,?,?,?,?)", new String[]{"ID_KEY"});
+            PreparedStatement pst = sql.getConnection().prepareStatement("INSERT INTO X509KEYS (ID_KEY,KEYNAME,KEYTYPE,KEYFILE,ALGO,SHA256,ID_ASSOCIATED_KEY, PASSWORD, SALT) VALUES (NEXT VALUE FOR X509KEYS_SEQ,?,?,?,?,?,?,?,?)", new String[]{"ID_KEY"});
             // CREATE TABLE X509KEYS (ID_KEY INTEGER PRIMARY KEY,	KEYNAME VARCHAR(200), KEYTYPE INTEGER,KEYFILE BLOB, ALGO VARCHAR(64), SHA256  VARCHAR(256),ID_ASSOCIATED_KEY INTEGER);
             pst.setString(1, keyName);
             pst.setInt(2, isPrivate ? 1 : 2);
@@ -354,7 +374,10 @@ public class CryptoDAO {
             pst.setString(4, algo);
             pst.setString(5, realHash);
             pst.setInt(6, idAssociatedKey);
-            pst.setString(7, password);
+            byte[] salt = PBEManager.generateSalt();
+            byte[] encryptedSaltedPassword = PBEManager.encrypt(password, PBEManager.getSubmittedPassword(), salt);
+            pst.setString(7, new String(encryptedSaltedPassword));
+            pst.setString(8, new String(salt));
             pst.executeUpdate();
             ResultSet rs = pst.getGeneratedKeys();
             if (rs.next()) {
@@ -364,8 +387,23 @@ public class CryptoDAO {
             return 0;
         } catch (SQLException ex) {
             Logger.getLogger(CryptoGenerator.class.getName()).log(Level.SEVERE, null, ex);
-            return 0;
+
+        } catch (NoSuchAlgorithmException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (InvalidKeySpecException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (NoSuchPaddingException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (InvalidKeyException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (InvalidAlgorithmParameterException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (IllegalBlockSizeException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (BadPaddingException ex) {
+            Exceptions.printStackTrace(ex);
         }
+        return 0;
     }
 
     public static String insertCertInDB(File filePath, String certName, String CN, String realHash, String algo, int privKid, String thumbPrint, int certType, Date expiryDate, BigInteger serial, BigInteger acSerialCursor, Date lastCRLUpdate) {

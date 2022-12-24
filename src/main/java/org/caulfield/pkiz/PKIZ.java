@@ -34,7 +34,9 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -57,6 +59,7 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
+import org.caulfield.pkiz.PBE.PBEManager;
 import org.caulfield.pkiz.analyzer.FileAnalyzer;
 import org.caulfield.pkiz.crypto.CertType;
 import org.caulfield.pkiz.crypto.CryptoGenerator;
@@ -103,6 +106,37 @@ public class PKIZ extends javax.swing.JFrame {
             }
         });
         initComponents();
+        HSQLLoader sql = new HSQLLoader();
+        if (sql.baseInitializedAndPasswordDefined()) {
+            jDialogLogin.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+            //jPasswordFieldLogin.setTransferHandler(null);
+            jPasswordFieldLogin.putClientProperty("JPasswordField.cutCopyAllowed", true);
+            jDialogLogin.setLocationRelativeTo(null);
+            jDialogLogin.setBounds(400, 300, 400, 300);
+            jDialogLogin.setResizable(false);
+            setLocationRelativeTo(PKIZ.this);
+            jDialogLogin.setVisible(true);
+            if (PBEManager.getSalt().equals("")) {
+                System.out.println("org.caulfield.pkiz.PKIZ.<init>() getout1");
+                System.exit(0);
+            }
+        } else {
+            jDialogLoginInit.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+            // jPasswordFieldLoginInnit1.setTransferHandler(null);
+            // jPasswordFieldLoginInnit2.setTransferHandler(null);
+            jPasswordFieldLoginInnit1.putClientProperty("JPasswordField.cutCopyAllowed", true);
+            jPasswordFieldLoginInnit2.putClientProperty("JPasswordField.cutCopyAllowed", true);
+            jDialogLoginInit.setLocationRelativeTo(null);
+            jDialogLoginInit.setBounds(400, 300, 400, 300);
+            jDialogLoginInit.setResizable(false);
+            setLocationRelativeTo(PKIZ.this);
+            jDialogLoginInit.setVisible(true);
+            if (PBEManager.getSalt().equals("")) {
+                System.out.println("org.caulfield.pkiz.PKIZ.<init>() getout2");
+                System.exit(0);
+            }
+        }
+
         Security.addProvider(new BouncyCastleProvider());
         jTextFieldCountry.setDocument(new JTextFieldLimit(2));
         jLabelLoading.setVisible(false);
@@ -779,6 +813,26 @@ public class PKIZ extends javax.swing.JFrame {
         jFileChooserExportCRL = new javax.swing.JFileChooser();
         jPanelPGPKeyring = new javax.swing.JPanel();
         jLabel56 = new javax.swing.JLabel();
+        jDialogLogin = new javax.swing.JDialog();
+        jLabel53 = new javax.swing.JLabel();
+        jPasswordFieldLogin = new javax.swing.JPasswordField();
+        jLabel92 = new javax.swing.JLabel();
+        jButtonLogin = new javax.swing.JButton();
+        jButtonCancelLogin = new javax.swing.JButton();
+        jLabel94 = new javax.swing.JLabel();
+        jLabel95 = new javax.swing.JLabel();
+        jLabelInfoLogin = new javax.swing.JLabel();
+        jDialogLoginInit = new javax.swing.JDialog();
+        jLabel96 = new javax.swing.JLabel();
+        jPasswordFieldLoginInnit2 = new javax.swing.JPasswordField();
+        jLabel97 = new javax.swing.JLabel();
+        jLabelInfoLoginInit = new javax.swing.JLabel();
+        jButtonLoginInnit = new javax.swing.JButton();
+        jButtonCancelLoginInnit = new javax.swing.JButton();
+        jLabel99 = new javax.swing.JLabel();
+        jLabel100 = new javax.swing.JLabel();
+        jLabel101 = new javax.swing.JLabel();
+        jPasswordFieldLoginInnit1 = new javax.swing.JPasswordField();
         jTabbedPaneScreens = new javax.swing.JTabbedPane();
         jPanelDashboard = new javax.swing.JPanel();
         jPanel23 = new javax.swing.JPanel();
@@ -1034,12 +1088,6 @@ public class PKIZ extends javax.swing.JFrame {
         openMenuItem = new javax.swing.JMenuItem();
         saveMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
-        editMenu = new javax.swing.JMenu();
-        cutMenuItem = new javax.swing.JMenuItem();
-        copyMenuItem = new javax.swing.JMenuItem();
-        pasteMenuItem = new javax.swing.JMenuItem();
-        deleteMenuItem = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
         helpMenu = new javax.swing.JMenu();
         aboutMenuItem = new javax.swing.JMenuItem();
 
@@ -1514,6 +1562,116 @@ public class PKIZ extends javax.swing.JFrame {
                 .addComponent(jLabel56)
                 .addContainerGap(353, Short.MAX_VALUE))
         );
+
+        jDialogLogin.setTitle("Password");
+        jDialogLogin.setMaximumSize(new java.awt.Dimension(355, 100));
+        jDialogLogin.setModal(true);
+        jDialogLogin.setPreferredSize(new java.awt.Dimension(355, 100));
+        jDialogLogin.setSize(new java.awt.Dimension(355, 100));
+        jDialogLogin.setType(java.awt.Window.Type.UTILITY);
+        jDialogLogin.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel53.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jLabel53.setText("Enter password : ");
+        jDialogLogin.getContentPane().add(jLabel53, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, -1, -1));
+
+        jPasswordFieldLogin.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jDialogLogin.getContentPane().add(jPasswordFieldLogin, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 120, 217, -1));
+
+        jLabel92.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel92.setText("PASSWORD");
+        jDialogLogin.getContentPane().add(jLabel92, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 30, -1, -1));
+
+        jButtonLogin.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
+        jButtonLogin.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonLogin.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonLogin.setText("OK");
+        jButtonLogin.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonLogin.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonLoginActionPerformed(evt);
+            }
+        });
+        jDialogLogin.getContentPane().add(jButtonLogin, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 160, 77, 30));
+
+        jButtonCancelLogin.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Red"));
+        jButtonCancelLogin.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonCancelLogin.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonCancelLogin.setText("Cancel");
+        jButtonCancelLogin.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonCancelLogin.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonCancelLoginActionPerformed(evt);
+            }
+        });
+        jDialogLogin.getContentPane().add(jButtonCancelLogin, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 160, 77, 30));
+
+        jLabel94.setIcon(new javax.swing.ImageIcon(getClass().getResource("/key.png"))); // NOI18N
+        jLabel94.setToolTipText("");
+        jDialogLogin.getContentPane().add(jLabel94, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 30, 27, 25));
+
+        jLabel95.setText("You must enter your master password to access your database.    ");
+        jDialogLogin.getContentPane().add(jLabel95, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 60, -1, -1));
+        jDialogLogin.getContentPane().add(jLabelInfoLogin, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 170, 160, 20));
+
+        jDialogLoginInit.setTitle("Password");
+        jDialogLoginInit.setMaximumSize(new java.awt.Dimension(407, 230));
+        jDialogLoginInit.setModal(true);
+        jDialogLoginInit.setResizable(false);
+        jDialogLoginInit.setType(java.awt.Window.Type.UTILITY);
+        jDialogLoginInit.getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel96.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jLabel96.setText("Repeat password : ");
+        jDialogLoginInit.getContentPane().add(jLabel96, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 140, -1, 30));
+
+        jPasswordFieldLoginInnit2.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jDialogLoginInit.getContentPane().add(jPasswordFieldLoginInnit2, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 140, 217, -1));
+
+        jLabel97.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        jLabel97.setText("PASSWORD INITIALIZATION");
+        jDialogLoginInit.getContentPane().add(jLabel97, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, -1, -1));
+
+        jLabelInfoLoginInit.setText("    ");
+        jDialogLoginInit.getContentPane().add(jLabelInfoLoginInit, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 220, 330, 20));
+
+        jButtonLoginInnit.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Green"));
+        jButtonLoginInnit.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonLoginInnit.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonLoginInnit.setText("OK");
+        jButtonLoginInnit.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonLoginInnit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonLoginInnitActionPerformed(evt);
+            }
+        });
+        jDialogLoginInit.getContentPane().add(jButtonLoginInnit, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 180, 77, 30));
+
+        jButtonCancelLoginInnit.setBackground(javax.swing.UIManager.getDefaults().getColor("Actions.Red"));
+        jButtonCancelLoginInnit.setFont(new java.awt.Font("Lato", 1, 16)); // NOI18N
+        jButtonCancelLoginInnit.setForeground(new java.awt.Color(255, 255, 255));
+        jButtonCancelLoginInnit.setText("Cancel");
+        jButtonCancelLoginInnit.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jButtonCancelLoginInnit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonCancelLoginInnitActionPerformed(evt);
+            }
+        });
+        jDialogLoginInit.getContentPane().add(jButtonCancelLoginInnit, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 180, 77, 30));
+
+        jLabel99.setIcon(new javax.swing.ImageIcon(getClass().getResource("/key.png"))); // NOI18N
+        jLabel99.setToolTipText("");
+        jDialogLoginInit.getContentPane().add(jLabel99, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 20, 27, 25));
+
+        jLabel100.setText("You must enter a master password to initialize your database.    ");
+        jDialogLoginInit.getContentPane().add(jLabel100, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 70, -1, -1));
+
+        jLabel101.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jLabel101.setText("Enter password : ");
+        jDialogLoginInit.getContentPane().add(jLabel101, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 110, 120, 20));
+
+        jPasswordFieldLoginInnit1.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
+        jDialogLoginInit.getContentPane().add(jPasswordFieldLoginInnit1, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 110, 217, -1));
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -4123,35 +4281,6 @@ public class PKIZ extends javax.swing.JFrame {
 
         menuBar.add(fileMenu);
 
-        editMenu.setMnemonic('e');
-        editMenu.setText("Fonctions");
-
-        cutMenuItem.setMnemonic('t');
-        cutMenuItem.setText("Generate");
-        editMenu.add(cutMenuItem);
-
-        copyMenuItem.setMnemonic('y');
-        copyMenuItem.setText("Analyze");
-        copyMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                copyMenuItemActionPerformed(evt);
-            }
-        });
-        editMenu.add(copyMenuItem);
-
-        pasteMenuItem.setMnemonic('p');
-        pasteMenuItem.setText("Transform");
-        editMenu.add(pasteMenuItem);
-
-        deleteMenuItem.setMnemonic('d');
-        deleteMenuItem.setText("Convert");
-        editMenu.add(deleteMenuItem);
-
-        jMenuItem1.setText("X509 PKI");
-        editMenu.add(jMenuItem1);
-
-        menuBar.add(editMenu);
-
         helpMenu.setMnemonic('h');
         helpMenu.setText("Help");
 
@@ -4646,13 +4775,53 @@ public class PKIZ extends javax.swing.JFrame {
     private void jButtonBuildPKCS12MakerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBuildPKCS12MakerActionPerformed
         // TODO add your handling code here:
         CryptoGenerator cg = new CryptoGenerator();
-        String outRet = cg.buildPKCS12fromCertAndKey((String) jComboBoxPKCS12MakerCert.getSelectedItem(), (String) jComboBoxPKCS12MakerPK.getSelectedItem(), new String (jPasswordFieldPKCS12Maker.getPassword()), jTextFieldGlobalOutput.getText());
+        String outRet = cg.buildPKCS12fromCertAndKey((String) jComboBoxPKCS12MakerCert.getSelectedItem(), (String) jComboBoxPKCS12MakerPK.getSelectedItem(), new String(jPasswordFieldPKCS12Maker.getPassword()), jTextFieldGlobalOutput.getText());
         ((DefaultListModel) jListEvents.getModel()).addElement(outRet);
     }//GEN-LAST:event_jButtonBuildPKCS12MakerActionPerformed
 
     private void jComboBoxPKCS12MakerPKActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxPKCS12MakerPKActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jComboBoxPKCS12MakerPKActionPerformed
+
+    private void jButtonLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonLoginActionPerformed
+        // TODO add your handling code here:
+        if (jPasswordFieldLogin.getPassword().length != 0) {
+            String outRet = PBEManager.tryLogin(String.valueOf(jPasswordFieldLogin.getPassword()));
+            if (outRet.equals("Login Successful")) {
+                ((DefaultListModel) jListEvents.getModel()).addElement(outRet);
+                jDialogLogin.setVisible(false);
+            } else {
+                jLabelInfoLogin.setForeground(Color.red);
+                jLabelInfoLogin.setText("Wrong password. Try again.");
+            }
+        }
+    }//GEN-LAST:event_jButtonLoginActionPerformed
+
+    private void jButtonCancelLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelLoginActionPerformed
+        // TODO add your handling code here:
+        System.exit(0);
+    }//GEN-LAST:event_jButtonCancelLoginActionPerformed
+
+    private void jButtonLoginInnitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonLoginInnitActionPerformed
+        // TODO add your handling code here:
+        if (jPasswordFieldLoginInnit1.getPassword().length < 10) {
+            jLabelInfoLoginInit.setForeground(Color.red);
+            jLabelInfoLoginInit.setText("Passwords must be at least 10 characters long. Try again.");
+        } else if (jPasswordFieldLoginInnit1.getPassword().length >= 10 && jPasswordFieldLoginInnit2.getPassword().length >= 10 && String.valueOf(jPasswordFieldLoginInnit1.getPassword()).equals(String.valueOf(jPasswordFieldLoginInnit2.getPassword()))) {
+            String outRet = PBEManager.createLogin(String.valueOf(jPasswordFieldLoginInnit1.getPassword()));
+            System.out.println("org.caulfield.pkiz.PKIZ.jButtonLoginInnitActionPerformed()" + PBEManager.getSalt() + " " + PBEManager.getEncryptedPassword());
+            ((DefaultListModel) jListEvents.getModel()).addElement(outRet);
+            jDialogLoginInit.setVisible(false);
+        } else {
+            jLabelInfoLoginInit.setForeground(Color.red);
+            jLabelInfoLoginInit.setText("Passwords don't match. Try again.");
+        }
+    }//GEN-LAST:event_jButtonLoginInnitActionPerformed
+
+    private void jButtonCancelLoginInnitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelLoginInnitActionPerformed
+        // TODO add your handling code here:
+        System.exit(0);
+    }//GEN-LAST:event_jButtonCancelLoginInnitActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_jButton8ActionPerformed
         // TODO add your handling code here:
@@ -4827,6 +4996,7 @@ public class PKIZ extends javax.swing.JFrame {
 
     private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_exitMenuItemActionPerformed
         // TODO add your handling code here:
+        System.exit(0);
     }// GEN-LAST:event_exitMenuItemActionPerformed
 
     private void aboutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_aboutMenuItemActionPerformed
@@ -5053,10 +5223,6 @@ public class PKIZ extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem aboutMenuItem;
-    private javax.swing.JMenuItem copyMenuItem;
-    private javax.swing.JMenuItem cutMenuItem;
-    private javax.swing.JMenuItem deleteMenuItem;
-    private javax.swing.JMenu editMenu;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
@@ -5080,6 +5246,8 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonBruteForceCancel;
     private javax.swing.JButton jButtonBuildPKCS12Maker;
     private javax.swing.JButton jButtonCSRGenerate;
+    private javax.swing.JButton jButtonCancelLogin;
+    private javax.swing.JButton jButtonCancelLoginInnit;
     private javax.swing.JButton jButtonCertGenerate;
     private javax.swing.JButton jButtonCipher;
     private javax.swing.JButton jButtonConvertDER;
@@ -5112,6 +5280,8 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JButton jButtonImportKey1;
     private javax.swing.JButton jButtonKeyName;
     private javax.swing.JButton jButtonKeyName1;
+    private javax.swing.JButton jButtonLogin;
+    private javax.swing.JButton jButtonLoginInnit;
     private javax.swing.JButton jButtonPKCS12Generate;
     private javax.swing.JButton jButtonPkGenerate;
     private javax.swing.JButton jButtonPubGenerate;
@@ -5158,6 +5328,8 @@ public class PKIZ extends javax.swing.JFrame {
     private com.toedter.calendar.JDateChooser jDateChooserWExpiry;
     private javax.swing.JDialog jDialogFileImport;
     private javax.swing.JDialog jDialogFileImportPublic;
+    private javax.swing.JDialog jDialogLogin;
+    private javax.swing.JDialog jDialogLoginInit;
     private javax.swing.JEditorPane jEditorPaneIBruteForceResult;
     private javax.swing.JEditorPane jEditorPaneIdentifierResults;
     private javax.swing.JFileChooser jFileChooserDirectoriesOnly;
@@ -5168,6 +5340,8 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JFrame jFrameCertWizard;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel100;
+    private javax.swing.JLabel jLabel101;
     private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
@@ -5214,6 +5388,7 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel50;
     private javax.swing.JLabel jLabel51;
     private javax.swing.JLabel jLabel52;
+    private javax.swing.JLabel jLabel53;
     private javax.swing.JLabel jLabel54;
     private javax.swing.JLabel jLabel55;
     private javax.swing.JLabel jLabel56;
@@ -5256,13 +5431,20 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel9;
     private javax.swing.JLabel jLabel90;
     private javax.swing.JLabel jLabel91;
+    private javax.swing.JLabel jLabel92;
+    private javax.swing.JLabel jLabel94;
+    private javax.swing.JLabel jLabel95;
+    private javax.swing.JLabel jLabel96;
+    private javax.swing.JLabel jLabel97;
+    private javax.swing.JLabel jLabel99;
     private javax.swing.JLabel jLabelCertaintyValue;
     private java.awt.Label jLabelCertaintyValuePk;
     private javax.swing.JLabel jLabelGlobalDir;
+    private javax.swing.JLabel jLabelInfoLogin;
+    private javax.swing.JLabel jLabelInfoLoginInit;
     private javax.swing.JLabel jLabelLoading;
     private javax.swing.JLabel jLabelWConsole;
     private javax.swing.JList<String> jListEvents;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel11;
@@ -5297,6 +5479,9 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JPanel jPanelEvents;
     private javax.swing.JPanel jPanelPGPKeyring;
     private javax.swing.JPanel jPanelTransform;
+    private javax.swing.JPasswordField jPasswordFieldLogin;
+    private javax.swing.JPasswordField jPasswordFieldLoginInnit1;
+    private javax.swing.JPasswordField jPasswordFieldLoginInnit2;
     private javax.swing.JPasswordField jPasswordFieldPKCS12Maker;
     private javax.swing.JPasswordField jPasswordFieldW1;
     private javax.swing.JPasswordField jPasswordFieldW2;
@@ -5371,7 +5556,6 @@ public class PKIZ extends javax.swing.JFrame {
     private javax.swing.JMenuBar menuBar;
     private javax.swing.JMenuItem openMenuItem;
     private org.netbeans.swing.outline.Outline outline;
-    private javax.swing.JMenuItem pasteMenuItem;
     private javax.swing.JMenuItem saveMenuItem;
     // End of variables declaration//GEN-END:variables
 }
